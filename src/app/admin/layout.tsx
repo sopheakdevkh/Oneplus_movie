@@ -2,7 +2,7 @@ import React from "react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
 export const metadata = {
-  title: "Admin Console | Oneplus Movie",
+  title: "Admin Console | LensImpact Film Club",
   description: "Streaming SaaS catalog administration and analytics",
 };
 

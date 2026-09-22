@@ -39,11 +39,27 @@ export default async function AdminDashboardPage() {
           </div>
 
           <Link
-            href="/admin/movies"
-            className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-[#FF9F0A] hover:bg-[#FFAB00] text-black text-xs font-bold shadow-[0_0_15px_rgba(255,159,10,0.3)] transition-all"
+            href="/admin/subscriptions"
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-semibold border border-white/10 transition-all"
+          >
+            <Users className="w-4 h-4 text-[#FF5500]" />
+            <span>Manage Subscriptions</span>
+          </Link>
+
+          <Link
+            href="/admin/content"
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-semibold border border-white/10 transition-all"
+          >
+            <Film className="w-4 h-4 text-[#FF9F0A]" />
+            <span>Film CMS (Split Access)</span>
+          </Link>
+
+          <Link
+            href="/admin/content"
+            className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5500] to-[#EB0029] hover:from-[#ff6a1f] hover:to-[#ff1940] text-white text-xs font-bold shadow-[0_0_15px_rgba(255,85,0,0.3)] transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add Movie</span>
+            <span>Publish Film</span>
           </Link>
         </div>
       </div>

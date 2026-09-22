@@ -12,6 +12,7 @@ import {
   LogOut,
   Shield,
 } from "lucide-react";
+import OnePlusLogo from "./OnePlusLogo";
 
 interface NavItem {
   id: string;
@@ -51,21 +52,9 @@ export default function SidebarNav({ activeTab = "featured", onTabSelect }: Side
         className="hidden md:flex fixed left-0 top-0 bottom-0 z-40 w-20 lg:w-24 flex-col items-center justify-between py-7 bg-black border-r border-[#1E1E24] select-none"
         aria-label="Sidebar Navigation"
       >
-        {/* Top Logo: 4-Quadrant Turbine Emblem */}
+        {/* Top Logo: LensImpact Film Club Emblem */}
         <div className="flex flex-col items-center">
-          <button
-            onClick={() => handleSelect("discover")}
-            className="relative flex items-center justify-center w-11 h-11 text-white hover:opacity-85 transition-opacity"
-            aria-label="Home"
-          >
-            <svg
-              viewBox="0 0 32 32"
-              fill="currentColor"
-              className="w-8 h-8 text-white"
-            >
-              <path d="M16 2C8.268 2 2 8.268 2 16s6.268 14 14 14 14-6.268 14-14S23.732 2 16 2zm1 3.076c5.44.52 9.773 4.853 10.293 10.293L17 14.15V5.076zM15 5.076v9.074L4.707 15.37C5.227 9.929 9.56 5.596 15 5.076zm-9.924 12.3L15 16.15v9.074c-5.44-.52-9.773-4.853-10.293-10.293zm11.924 9.074V17.39l10.293-1.22c-.52 5.44-4.853 9.774-10.293 10.294z" />
-            </svg>
-          </button>
+          <OnePlusLogo size="lg" showText={false} />
         </div>
 
         {/* Center Nav Icons */}

@@ -3,7 +3,7 @@ import {
   getActionMovies,
   getAllMovies,
   getFeaturedSpotlight,
-} from "@/lib/movies";
+} from "@/lib/server-movies";
 import StreamingAppClient from "@/components/StreamingAppClient";
 
 export default async function HomePage() {

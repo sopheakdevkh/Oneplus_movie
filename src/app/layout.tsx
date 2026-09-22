@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,18 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Oneplus Movie | Premium Streaming Experience",
+  title: "LensImpact Film Club | Watch Movies & TV Shows",
   description:
-    "Explore top rated blockbusters, exclusive action cinema, sci-fi sagas, and animations in stunning 4K HDR on Oneplus Movie.",
+    "Stream the latest movies, exclusive originals, and trending TV shows with LensImpact Film Club in cinematic Ultra HD quality.",
   keywords: [
-    "movies",
+    "LensImpact Film Club",
+    "LensImpact",
     "streaming",
-    "oneplus movie",
+    "movies",
+    "tv series",
     "cinema",
-    "top rated",
-    "action movies",
-    "sci-fi",
+    "watch online",
+    "ultra hd",
   ],
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
@@ -37,7 +44,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full bg-[#0A0A0C] text-white flex flex-col">{children}</body>
+      <body className="min-h-full bg-[#0A0A0C] text-white flex flex-col">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

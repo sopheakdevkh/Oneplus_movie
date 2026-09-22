@@ -1,4 +1,4 @@
-// Prisma schema for Oneplus Movie streaming platform
+// Prisma schema for LensImpact Film Club streaming platform
 
 generator client {
   provider = "prisma-client-js"
@@ -9,45 +9,57 @@ datasource db {
 }
 
 enum Role {
-  USER
-  ADMIN
-  SUBSCRIBER
+  USER @map("user")
+  ADMIN @map("admin")
 }
 
 model User {
-  id           String         @id @default(cuid())
-  name         String?
-  email        String         @unique
-  avatar       String?
-  role         Role           @default(USER)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  watchHistory WatchHistory[]
-  watchlist    Watchlist[]
+  id                  String         @id @default(cuid())
+  name                String?
+  email               String         @unique
+  passwordHash        String?        @map("password_hash")
+  avatar              String?
+  role                Role           @default(USER)
+  subscriptionStatus  String         @default("free") @map("subscription_status")
+  subscriptionTier    String?        @map("subscription_tier")
+  subscriptionEndDate DateTime?      @db.Timestamptz @map("subscription_end_date")
+  customerId          String?        @map("customer_id")
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  watchHistory        WatchHistory[]
+  watchlist           Watchlist[]
 
+  @@index([customerId])
+  @@index([subscriptionStatus])
+  @@index([role])
   @@map("users")
 }
 
 model Movie {
-  id            String         @id @default(cuid())
-  title         String
-  slug          String         @unique
-  description   String
-  releaseYear   Int
-  duration      Int // Duration in minutes
-  rating        Float // e.g. 9.2, 4.6
-  certification String // e.g. "CBFC: A", "PG-13", "18+"
-  posterUrl     String // Cloudinary URL or poster image path
-  bannerUrl     String? // Cloudinary backdrop/banner URL
-  videoUrl      String? // Trailer or stream HLS/MP4 link
-  isTopRated    Boolean        @default(false)
-  rank          Int? // 1, 2, 3... for Top Rated carousel
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  genres        Genre[]        @relation("MovieGenres")
-  watchHistory  WatchHistory[]
-  watchlist     Watchlist[]
+  id                String         @id @default(cuid())
+  title             String
+  slug              String         @unique
+  description       String
+  publicSynopsis    String?        @map("public_synopsis") @db.Text
+  youtubeVideoId    String?        @map("youtube_video_id") @db.VarChar(50)
+  premiumBreakdown  String?        @map("premium_breakdown") @db.Text
+  premiumResources  Json?          @map("premium_resources")
+  releaseYear       Int
+  duration          Int // Duration in minutes
+  rating            Float // e.g. 9.2, 4.6
+  certification     String // e.g. "CBFC: A", "PG-13", "18+"
+  posterUrl         String // Cloudinary URL or poster image path
+  bannerUrl         String? // Cloudinary backdrop/banner URL
+  videoUrl          String? // Trailer or stream HLS/MP4 link
+  isTopRated        Boolean        @default(false)
+  rank              Int? // 1, 2, 3... for Top Rated carousel
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  genres            Genre[]        @relation("MovieGenres")
+  watchHistory      WatchHistory[]
+  watchlist         Watchlist[]
 
+  @@index([youtubeVideoId])
   @@map("movies")
 }
 

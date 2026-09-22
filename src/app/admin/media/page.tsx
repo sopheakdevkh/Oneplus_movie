@@ -2,7 +2,7 @@ import React from "react";
 import { Cloud, ShieldCheck } from "lucide-react";
 
 export const metadata = {
-  title: "Cloudinary Assets | Oneplus Movie Admin",
+  title: "Cloudinary Assets | LensImpact Film Club Admin",
 };
 
 export default function AdminMediaPage() {

@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { OnePlusSignSvg } from "@/components/OnePlusLogo";
 import {
   LayoutDashboard,
   Film,
@@ -10,10 +11,14 @@ import {
   Shield,
   ArrowLeft,
   Cloud,
+  Users,
+  Sparkles,
 } from "lucide-react";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/subscriptions", label: "Subscriptions & Users", icon: Users },
+  { href: "/admin/content", label: "Film CMS (Split Access)", icon: Sparkles },
   { href: "/admin/movies", label: "Movies Catalog", icon: Film },
   { href: "/admin/genres", label: "Genres", icon: Tags },
   { href: "/admin/media", label: "Cloudinary Assets", icon: Cloud },
@@ -30,11 +35,11 @@ export default function AdminSidebar() {
       {/* ========================================================= */}
       <div className="md:hidden sticky top-0 z-40 bg-[#0A0A0E]/95 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#FF9F0A] to-[#FF8000] flex items-center justify-center text-black shadow-[0_0_15px_rgba(255,159,10,0.4)]">
-            <Shield className="w-4 h-4 fill-black" />
+          <div className="relative w-8 h-8 flex-shrink-0 drop-shadow-[0_0_12px_rgba(235,0,41,0.5)]">
+            <OnePlusSignSvg />
           </div>
           <div>
-            <span className="text-sm font-black text-white tracking-tight">Oneplus Admin</span>
+            <span className="text-sm font-black text-white tracking-tight">LensImpact Admin</span>
           </div>
         </div>
 
@@ -90,12 +95,12 @@ export default function AdminSidebar() {
         <div>
           {/* Brand & Admin Badge */}
           <div className="flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#FF9F0A] to-[#FF8000] flex items-center justify-center text-black shadow-[0_0_20px_rgba(255,159,10,0.4)]">
-              <Shield className="w-5 h-5 fill-black" />
+            <div className="relative w-10 h-10 flex-shrink-0 drop-shadow-[0_0_15px_rgba(235,0,41,0.5)]">
+              <OnePlusSignSvg />
             </div>
             <div>
-              <h1 className="text-base font-black text-white tracking-tight">Oneplus Movie</h1>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#FF9F0A]">
+              <h1 className="text-base font-black text-white tracking-tight">LensImpact Film Club</h1>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#EB0029]">
                 Admin Console
               </p>
             </div>

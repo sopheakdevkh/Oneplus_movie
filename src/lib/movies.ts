@@ -1,5 +1,3 @@
-import prisma from "./db";
-
 export interface GenreData {
   id: string;
   name: string;
@@ -11,6 +9,10 @@ export interface MovieData {
   title: string;
   slug: string;
   description: string;
+  publicSynopsis?: string | null;
+  youtubeVideoId?: string | null;
+  premiumBreakdown?: string | null;
+  premiumResources?: any | null;
   releaseYear: number;
   duration: number;
   rating: number;
@@ -22,307 +24,315 @@ export interface MovieData {
   rank?: number | null;
   genres: GenreData[];
   type?: "Movie" | "Series" | "Animation";
+  tagline?: string;
+  badge?: string;
+  subMeta?: string;
+  episode?: string;
 }
 
-export const EXACT_MOVIES: MovieData[] = [
-  // Top Rated (4 Cards displayed in 4-column Grid)
-  {
-    id: "top-1-john-wick",
-    title: "John wick 4",
-    slug: "john-wick-4",
-    description: "John Wick uncovers a path to defeating The High Table across Paris, Osaka, Berlin, and New York.",
-    releaseYear: 2023,
-    duration: 169,
-    rating: 9.2,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    isTopRated: true,
-    rank: 1,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "top-2-aquaman",
-    title: "Aquaman 2",
-    slug: "aquaman-2",
-    description: "Black Manta seeks revenge on Aquaman for his father's death with the mythic Black Trident.",
-    releaseYear: 2023,
-    duration: 124,
-    rating: 9.2,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    isTopRated: true,
-    rank: 2,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "top-3-transformers",
-    title: "Transformers: Rise of the Beasts",
-    slug: "transformers-rise-of-the-beasts",
-    description: "The Maximals, Predacons, and Terrorcons join the existing battle on Earth between Autobots and Decepticons.",
-    releaseYear: 2023,
-    duration: 127,
-    rating: 9.2,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    isTopRated: true,
-    rank: 3,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "top-4-peter-pan",
-    title: "Peter Pan & Wendy",
-    slug: "peter-pan-and-wendy",
-    description: "Wendy Darling meets Peter Pan, a boy who refuses to grow up, and embarks on a thrilling adventure to Neverland.",
-    releaseYear: 2023,
-    duration: 106,
-    rating: 9.2,
-    certification: "PG-13",
-    posterUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    isTopRated: true,
-    rank: 4,
-    genres: [{ id: "g-drama", name: "Drama", slug: "drama" }],
-    type: "Movie",
-  },
+export interface ContinueWatchingItem {
+  id: string;
+  title: string;
+  episode: string;
+  progressPercent: number;
+  posterUrl: string;
+  movie: MovieData;
+}
 
-  // Best of Action (8 Cards Scrollable Grid - 4 per row)
+export interface UserProfile {
+  id: string;
+  name: string;
+  handle?: string;
+  avatarBg: string;
+  icon: string;
+}
+
+export const USER_PROFILES: UserProfile[] = [
+  { id: "p1", name: "Sharma", handle: "@uxid.sharmaasd...", avatarBg: "bg-emerald-500", icon: "👤" },
+  { id: "p2", name: "Divi boo", avatarBg: "bg-orange-500", icon: "🦊" },
+  { id: "p3", name: "Adhi", avatarBg: "bg-amber-400", icon: "🦁" },
+  { id: "p4", name: "Harsha", avatarBg: "bg-teal-400", icon: "🐼" },
+];
+
+// 1. Featured Hero Card from screenshot: Spider-Man: Across the Spider-Verse
+export const HERO_SPIDERMAN: MovieData = {
+  id: "hero-spiderman",
+  title: "Spider-Man:\nAcross the Spider-Verse",
+  slug: "spider-man-across-the-spider-verse",
+  badge: "🔥 Now Trending",
+  description:
+    "Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People charged with protecting its very existence.",
+  releaseYear: 2023,
+  duration: 140,
+  rating: 8.8,
+  certification: "U/A 13+",
+  posterUrl:
+    "https://images.unsplash.com/photo-1635863138275-d9b33299680b?auto=format&fit=crop&w=800&q=80",
+  bannerUrl:
+    "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1600&q=80",
+  videoUrl: "https://www.youtube.com/watch?v=cqGjhVJWtEg",
+  isTopRated: true,
+  genres: [
+    { id: "g-animation", name: "Animation", slug: "animation" },
+    { id: "g-adventure", name: "Adventure", slug: "adventure" },
+  ],
+  type: "Animation",
+};
+
+// 2. Recommended Movies from screenshot: Harry Potter, Interstellar, Inception, Tenet
+export const RECOMMENDED_MOVIES: MovieData[] = [
   {
-    id: "act-1-man-from-toronto",
-    title: "The Man from Toronto",
-    slug: "the-man-from-toronto",
-    description: "The world's deadliest assassin and New York's biggest screw-up are mistaken for each other.",
-    releaseYear: 2022,
-    duration: 110,
-    rating: 4.6,
-    certification: "PG-13",
-    posterUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackSeeTheWorld.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "act-2-extraction",
-    title: "Extraction",
-    slug: "extraction",
-    description: "A black-market mercenary who has nothing to lose is hired to rescue the kidnapped son of an imprisoned international crime lord.",
-    releaseYear: 2020,
-    duration: 116,
-    rating: 4.6,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "act-3-godzilla",
-    title: "Godzilla: King of the Monsters",
-    slug: "godzilla-king-of-the-monsters",
-    description: "Members of the crypto-zoological agency Monarch face off against ancient god-sized monsters.",
-    releaseYear: 2019,
-    duration: 132,
-    rating: 4.6,
-    certification: "PG-13",
-    posterUrl: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "act-4-jumanji",
-    title: "Jumanji: The Next Level",
-    slug: "jumanji-the-next-level",
-    description: "The gang is back to rescue one of their own, but the game has changed in unpredictable ways.",
-    releaseYear: 2019,
-    duration: 123,
-    rating: 4.6,
-    certification: "PG-13",
-    posterUrl: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "act-5-yaksha",
-    title: "Yaksha: Ruthless Operations",
-    slug: "yaksha-ruthless-operations",
-    description: "The ruthless leader of an overseas black ops team takes on a deadly mission in Shenyang.",
-    releaseYear: 2022,
-    duration: 125,
-    rating: 4.6,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "act-6-mechanic",
-    title: "Mechanic: Resurrection",
-    slug: "mechanic-resurrection",
-    description: "Arthur Bishop thought he had put his murderous past behind him when a formidable enemy kidnaps his love.",
-    releaseYear: 2016,
-    duration: 98,
-    rating: 4.6,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "act-7-the-pirates",
-    title: "The Pirates: The Last Royal Treasure",
-    slug: "the-pirates-the-last-royal-treasure",
-    description: "A gutsy crew of Joseon pirates and bandits battle stormy seas in search of royal gold lost at sea.",
-    releaseYear: 2022,
-    duration: 126,
-    rating: 4.6,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  {
-    id: "act-8-six-underground",
-    title: "6 Underground",
-    slug: "6-underground",
-    description: "Six individuals from around the globe choose to delete their pasts to change the future.",
-    releaseYear: 2019,
-    duration: 128,
-    rating: 4.6,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
-    type: "Movie",
-  },
-  // Additional 8 action movies for rich multi-page horizontal scrolling (optional extra pages)
-  {
-    id: "act-9-top-gun",
-    title: "Top Gun: Maverick",
-    slug: "top-gun-maverick",
-    description: "After thirty years, Maverick is still pushing the envelope as a top naval aviator.",
-    releaseYear: 2022,
+    id: "rec-harry-potter",
+    title: "Harry Potter (2011)",
+    slug: "harry-potter-and-the-deathly-hallows-2",
+    description:
+      "Harry, Ron, and Hermione search for Voldemort's remaining Horcruxes in their final stand at Hogwarts.",
+    releaseYear: 2011,
     duration: 130,
-    rating: 4.9,
-    certification: "PG-13",
-    posterUrl: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
+    rating: 8.1,
+    certification: "U/A 16+",
+    subMeta: "IMDb 8.1 • 2h 10min • 2011",
+    posterUrl:
+      "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?auto=format&fit=crop&w=600&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=mObK5XD8udk",
+    isTopRated: true,
+    genres: [{ id: "g-fantasy", name: "Fantasy", slug: "fantasy" }],
     type: "Movie",
   },
   {
-    id: "act-10-bullet-train",
-    title: "Bullet Train",
-    slug: "bullet-train",
-    description: "Five assassins aboard a swiftly-moving bullet train find out that their missions have something in common.",
-    releaseYear: 2022,
-    duration: 126,
-    rating: 4.7,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
+    id: "rec-interstellar",
+    title: "Interstellar",
+    slug: "interstellar",
+    description:
+      "A team of explorers travels through a wormhole in space in an attempt to ensure humanity's survival.",
+    releaseYear: 2014,
+    duration: 169,
+    rating: 8.7,
+    certification: "U/A 16+",
+    subMeta: "IMDb 8.7 • 2h 49min • 2014",
+    posterUrl:
+      "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=600&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1200&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=zSWdZVtXT7E",
+    isTopRated: true,
+    genres: [{ id: "g-scifi", name: "Sci-Fi", slug: "sci-fi" }],
     type: "Movie",
   },
   {
-    id: "act-11-red-notice",
-    title: "Red Notice",
-    slug: "red-notice",
-    description: "An Interpol agent tracks the world's most wanted art thief with the help of a rival criminal.",
-    releaseYear: 2021,
-    duration: 118,
-    rating: 4.5,
-    certification: "PG-13",
-    posterUrl: "https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
+    id: "rec-inception",
+    title: "Inception",
+    slug: "inception",
+    description:
+      "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task.",
+    releaseYear: 2010,
+    duration: 148,
+    rating: 8.8,
+    certification: "U/A 13+",
+    subMeta: "IMDb 8.8 • 2h 28min • 2010",
+    posterUrl:
+      "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=YoHD9XEInc0",
+    isTopRated: true,
+    genres: [{ id: "g-scifi", name: "Sci-Fi", slug: "sci-fi" }],
     type: "Movie",
   },
   {
-    id: "act-12-gray-man",
-    title: "The Gray Man",
-    slug: "the-gray-man",
-    description: "When the CIA's most skilled operative accidentally uncovers dark agency secrets, a psychopathic former colleague puts a bounty on his head.",
-    releaseYear: 2022,
-    duration: 122,
-    rating: 4.6,
-    certification: "CBFC: A",
-    posterUrl: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1000&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    id: "rec-tenet",
+    title: "Tenet",
+    slug: "tenet",
+    description:
+      "Armed with only one word, Tenet, and fighting for the survival of the entire world, a Protagonist journeys through twilight world of international espionage.",
+    releaseYear: 2020,
+    duration: 150,
+    rating: 7.3,
+    certification: "U/A 16+",
+    subMeta: "IMDb 7.3 • 2h 30min • 2020",
+    posterUrl:
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=LdOM0x0XDMo",
     isTopRated: false,
-    genres: [{ id: "g-action", name: "Action", slug: "action" }],
+    genres: [{ id: "g-scifi", name: "Sci-Fi", slug: "sci-fi" }],
     type: "Movie",
   },
 ];
 
-export async function getTopRatedMovies(): Promise<MovieData[]> {
-  try {
-    if (process.env.DATABASE_URL) {
-      const movies = await prisma.movie.findMany({
-        where: { isTopRated: true },
-        include: { genres: true },
-        orderBy: { rank: "asc" },
-      });
-      if (movies.length > 0) {
-        return movies as unknown as MovieData[];
-      }
-    }
-  } catch (error) {
-    console.warn("Prisma query fallback:", error);
-  }
+// 3. Right Sidebar Trending Now Cards: Never Have I Ever, Lucifer
+export const RIGHT_TRENDING_CARDS: MovieData[] = [
+  {
+    id: "rt-never-have-i-ever",
+    title: "NEVER HAVE I EVER",
+    slug: "never-have-i-ever",
+    tagline: "NEW SERIES",
+    description:
+      "The complicated life of a modern-day first-generation Indian American teenage girl, inspired by Mindy Kaling's own childhood.",
+    releaseYear: 2023,
+    duration: 30,
+    rating: 7.9,
+    certification: "16+",
+    posterUrl:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=HyOEcV4n_No",
+    isTopRated: true,
+    genres: [{ id: "g-comedy", name: "Comedy", slug: "comedy" }],
+    type: "Series",
+  },
+  {
+    id: "rt-lucifer",
+    title: "LUCIFER",
+    slug: "lucifer",
+    tagline: "NEW SERIES",
+    description:
+      "Bored and unhappy as the Lord of Hell, Lucifer Morningstar abandoned his throne and retired to Los Angeles, where he ends up helping LAPD detective Chloe Decker.",
+    releaseYear: 2021,
+    duration: 45,
+    rating: 8.1,
+    certification: "18+",
+    posterUrl:
+      "https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=X4bF_quwNtw",
+    isTopRated: true,
+    genres: [{ id: "g-fantasy", name: "Fantasy", slug: "fantasy" }],
+    type: "Series",
+  },
+];
 
-  return EXACT_MOVIES.filter((m) => m.isTopRated).slice(0, 4);
-}
+// 4. Right Sidebar Continue Watching: Money Heist, Wednesday, Never Have I Ever
+export const RIGHT_CONTINUE_WATCHING: MovieData[] = [
+  {
+    id: "rcw-money-heist",
+    title: "Money Heist",
+    slug: "money-heist",
+    episode: "Season 3 · E5",
+    description:
+      "An unusual group of robbers attempt to carry out the most perfect robbery in Spanish history - stealing 2.4 billion euros from the Royal Mint of Spain.",
+    releaseYear: 2021,
+    duration: 50,
+    rating: 8.2,
+    certification: "18+",
+    posterUrl:
+      "https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=200&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=p_PJbmrX4uk",
+    isTopRated: true,
+    genres: [{ id: "g-crime", name: "Crime", slug: "crime" }],
+    type: "Series",
+  },
+  {
+    id: "rcw-wednesday",
+    title: "Wednesday",
+    slug: "wednesday",
+    episode: "Episode 9",
+    description:
+      "While attending Nevermore Academy, Wednesday Addams attempts to master her emerging psychic ability, thwart a monstrous killing spree and solve the supernatural mystery.",
+    releaseYear: 2022,
+    duration: 55,
+    rating: 8.1,
+    certification: "16+",
+    posterUrl:
+      "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=200&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=Di310WS8zLk",
+    isTopRated: true,
+    genres: [{ id: "g-mystery", name: "Mystery", slug: "mystery" }],
+    type: "Series",
+  },
+  {
+    id: "rcw-never-have-i-ever",
+    title: "Never Have I Ever",
+    slug: "never-have-i-ever-cw",
+    episode: "Season 2 · E7",
+    description:
+      "The complicated life of a modern-day first-generation Indian American teenage girl.",
+    releaseYear: 2023,
+    duration: 30,
+    rating: 7.9,
+    certification: "16+",
+    posterUrl:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+    bannerUrl:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+    videoUrl: "https://www.youtube.com/watch?v=HyOEcV4n_No",
+    isTopRated: false,
+    genres: [{ id: "g-comedy", name: "Comedy", slug: "comedy" }],
+    type: "Series",
+  },
+];
 
-export async function getActionMovies(): Promise<MovieData[]> {
-  try {
-    if (process.env.DATABASE_URL) {
-      const movies = await prisma.movie.findMany({
-        where: {
-          genres: {
-            some: {
-              slug: "action",
-            },
-          },
-        },
-        include: { genres: true },
-        orderBy: { rating: "desc" },
-      });
-      if (movies.length > 0) {
-        return movies as unknown as MovieData[];
-      }
-    }
-  } catch (error) {
-    console.warn("Prisma query fallback:", error);
-  }
+export const ALL_DASHBOARD_MOVIES: MovieData[] = [
+  HERO_SPIDERMAN,
+  ...RECOMMENDED_MOVIES,
+  ...RIGHT_TRENDING_CARDS,
+  ...RIGHT_CONTINUE_WATCHING,
+];
 
-  return EXACT_MOVIES.filter((m) => !m.isTopRated);
-}
+// Featured hero carousel slides
+export const FEATURED_SLIDES: MovieData[] = [
+  HERO_SPIDERMAN,
+  RECOMMENDED_MOVIES[1], // Interstellar
+  RECOMMENDED_MOVIES[2], // Inception
+];
 
-export async function getAllMovies(): Promise<MovieData[]> {
-  return EXACT_MOVIES;
-}
+// Continue Watching items for StreamPulse
+export const CONTINUE_WATCHING: ContinueWatchingItem[] = [
+  {
+    id: "cw-1",
+    title: "Money Heist",
+    episode: "Season 3 · Episode 5",
+    progressPercent: 68,
+    posterUrl: "https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=800&q=80",
+    movie: RIGHT_CONTINUE_WATCHING[0],
+  },
+  {
+    id: "cw-2",
+    title: "Wednesday",
+    episode: "Episode 9",
+    progressPercent: 84,
+    posterUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
+    movie: RIGHT_CONTINUE_WATCHING[1],
+  },
+  {
+    id: "cw-3",
+    title: "Never Have I Ever",
+    episode: "Season 2 · Episode 7",
+    progressPercent: 42,
+    posterUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+    movie: RIGHT_CONTINUE_WATCHING[2],
+  },
+  {
+    id: "cw-4",
+    title: "Interstellar",
+    episode: "1h 45m remaining",
+    progressPercent: 55,
+    posterUrl: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=800&q=80",
+    movie: RECOMMENDED_MOVIES[1],
+  },
+];
 
-export async function getFeaturedSpotlight(): Promise<MovieData> {
-  return EXACT_MOVIES[0];
-}
+// StreamPulse Originals collection
+export const STREAMPULSE_ORIGINALS: MovieData[] = [
+  HERO_SPIDERMAN,
+  RIGHT_TRENDING_CARDS[0], // Never Have I Ever
+  RIGHT_TRENDING_CARDS[1], // Lucifer
+  RIGHT_CONTINUE_WATCHING[0], // Money Heist
+  RECOMMENDED_MOVIES[0], // Harry Potter
+  RECOMMENDED_MOVIES[2], // Inception
+];
+
+// Legacy export compatibility
+export const EXACT_MOVIES: MovieData[] = ALL_DASHBOARD_MOVIES;
+export const TRENDING_MOVIES: MovieData[] = RECOMMENDED_MOVIES;
+export const FEATURED_SERIES: MovieData = HERO_SPIDERMAN;
+
