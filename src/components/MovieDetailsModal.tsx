@@ -36,6 +36,7 @@ import { parseVideoSource } from "../lib/video";
 import PaywallGate from "@/components/pricing/PaywallGate";
 import WatchlistButton from "@/components/WatchlistButton";
 import DiscussionForum from "@/components/comments/DiscussionForum";
+import { useAuth } from "@/context/AuthContext";
 
 interface MovieDetailsModalProps {
   movie: MovieData | null;
@@ -157,6 +158,7 @@ export default function MovieDetailsModal({
 
   // Parse video source (YouTube, Vimeo, or direct video file)
   const videoSource = useMemo(() => parseVideoSource(movie?.videoUrl), [movie?.videoUrl]);
+  const { user } = useAuth();
 
   // Reset playback state when movie changes
   useEffect(() => {
@@ -164,6 +166,32 @@ export default function MovieDetailsModal({
     setCurrentTime(0);
     setActiveTab("overview");
   }, [movie?.id]);
+
+  // Record watch history when user watches a movie
+  useEffect(() => {
+    if (!user?.id || !movie || !isPlaying) return;
+    try {
+      const key = `lensimpact_watch_history_${user.id}`;
+      const stored = JSON.parse(localStorage.getItem(key) || "[]");
+      const filtered = stored.filter(
+        (item: any) => item.movie?.id !== movie.id && item.id !== movie.id && item.id !== `wh-${movie.id}`
+      );
+      const newItem = {
+        id: `wh-${movie.id}`,
+        title: movie.title,
+        episode: movie.releaseYear ? `${movie.releaseYear} • Feature Film` : "Feature Film",
+        progressPercent: Math.min(
+          95,
+          Math.max(15, Math.round((currentTime / (duration || 120)) * 100) || 45)
+        ),
+        posterUrl: movie.bannerUrl || movie.posterUrl,
+        movie: movie,
+      };
+      localStorage.setItem(key, JSON.stringify([newItem, ...filtered].slice(0, 10)));
+    } catch {
+      // ignore
+    }
+  }, [user?.id, movie, isPlaying, currentTime, duration]);
 
   // Handle toast notifications
   const triggerToast = (msg: string) => {
@@ -329,7 +357,7 @@ export default function MovieDetailsModal({
                     allowFullScreen
                   />
                   {/* Floating Exit Video / Back to Poster Pill */}
-                  <div className="absolute top-4 left-4 z-30">
+                  {/* <div className="absolute top-4 left-4 z-30">
                     <button
                       onClick={() => setIsPlaying(false)}
                       className="px-3 py-1.5 rounded-full bg-black/80 hover:bg-black text-white/90 hover:text-white border border-white/20 backdrop-blur-md transition-all flex items-center space-x-1.5 text-xs font-semibold shadow-lg group active:scale-95"
@@ -338,7 +366,7 @@ export default function MovieDetailsModal({
                       <RotateCcw className="w-3.5 h-3.5 group-hover:-rotate-90 transition-transform duration-200 text-[#FF9F0A]" />
                       <span>Back to Poster</span>
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               ) : videoSource.type === "vimeo" ? (
                 /* Vimeo Embed Player */

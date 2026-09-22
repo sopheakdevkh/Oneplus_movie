@@ -15,8 +15,27 @@ export default function ContinueWatchingSection({
   items,
   onSelectMovie,
 }: ContinueWatchingSectionProps) {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [userHistory, setUserHistory] = React.useState<ContinueWatchingItem[]>(items);
+
+  // Load user-specific watch history from localStorage if available
+  React.useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const saved = localStorage.getItem(`lensimpact_watch_history_${user.id}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setUserHistory(parsed);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    setUserHistory(items);
+  }, [user?.id, items]);
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -24,7 +43,13 @@ export default function ContinueWatchingSection({
     scrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
   };
 
-  if (!items || items.length === 0) return null;
+  // NEVER show Continue Watching to visitors who do not have an account / are not signed in
+  if (isLoading || !isAuthenticated || !user) {
+    return null;
+  }
+
+  const displayItems = userHistory && userHistory.length > 0 ? userHistory : items;
+  if (!displayItems || displayItems.length === 0) return null;
 
   const firstName = user?.name ? user.name.split(" ")[0] : null;
   const sectionTitle = firstName ? `Continue Watching for ${firstName}` : "Continue Watching";
@@ -60,7 +85,7 @@ export default function ContinueWatchingSection({
         ref={scrollRef}
         className="flex space-x-4 sm:space-x-5 overflow-x-auto no-scrollbar scroll-smooth pb-2"
       >
-        {items.map((item) => {
+        {displayItems.map((item) => {
           return (
             <div
               key={item.id}

@@ -8,6 +8,7 @@ import {
   Cloud,
   ArrowRight,
   Database,
+  MonitorPlay,
 } from "lucide-react";
 import { getAdminStats, getAdminMovies } from "@/app/actions/movies";
 import { getPosterCardUrl } from "@/lib/cloudinary";
@@ -39,10 +40,18 @@ export default async function AdminDashboardPage() {
           </div>
 
           <Link
+            href="/admin/hero"
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-semibold border border-white/10 transition-all"
+          >
+            <MonitorPlay className="w-4 h-4 text-[#FF5500]" />
+            <span>Hero Banner</span>
+          </Link>
+
+          <Link
             href="/admin/subscriptions"
             className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-semibold border border-white/10 transition-all"
           >
-            <Users className="w-4 h-4 text-[#FF5500]" />
+            <Users className="w-4 h-4 text-[#FF9F0A]" />
             <span>Manage Subscriptions</span>
           </Link>
 

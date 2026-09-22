@@ -220,11 +220,168 @@ export async function toggleTopRatedAction(id: string, isTopRated: boolean, rank
     revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath("/admin/movies");
+    revalidatePath("/admin/hero");
 
     return { success: true, movie };
   } catch (error: unknown) {
     console.error("Toggle top rated error:", error);
     const message = error instanceof Error ? error.message : "Failed to toggle status";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Fetch all movies currently featured in the Hero Banner
+ */
+export async function getHeroBannerSlides(): Promise<MovieData[]> {
+  try {
+    const slides = await prisma.movie.findMany({
+      where: { isTopRated: true },
+      include: { genres: true },
+      orderBy: { rank: "asc" },
+    });
+
+    return slides as unknown as MovieData[];
+  } catch (error) {
+    console.error("Error loading hero banner slides:", error);
+    return [];
+  }
+}
+
+/**
+ * Add a movie to the Hero Banner carousel
+ */
+export async function addToHeroBannerAction(movieId: string) {
+  try {
+    const currentHero = await prisma.movie.findMany({
+      where: { isTopRated: true },
+      orderBy: { rank: "desc" },
+      take: 1,
+    });
+
+    const nextRank = currentHero.length > 0 && currentHero[0].rank ? currentHero[0].rank + 1 : 1;
+
+    const movie = await prisma.movie.update({
+      where: { id: movieId },
+      data: {
+        isTopRated: true,
+        rank: nextRank,
+      },
+      include: { genres: true },
+    });
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath("/admin/hero");
+    revalidatePath("/admin/movies");
+
+    return { success: true, movie };
+  } catch (error: unknown) {
+    console.error("Add to hero banner error:", error);
+    const message = error instanceof Error ? error.message : "Failed to add to hero banner";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Remove a movie from the Hero Banner carousel
+ */
+export async function removeFromHeroBannerAction(movieId: string) {
+  try {
+    await prisma.movie.update({
+      where: { id: movieId },
+      data: {
+        isTopRated: false,
+        rank: null,
+      },
+    });
+
+    // Re-normalize ranks
+    const remaining = await prisma.movie.findMany({
+      where: { isTopRated: true },
+      orderBy: { rank: "asc" },
+    });
+
+    for (let i = 0; i < remaining.length; i++) {
+      await prisma.movie.update({
+        where: { id: remaining[i].id },
+        data: { rank: i + 1 },
+      });
+    }
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath("/admin/hero");
+    revalidatePath("/admin/movies");
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Remove from hero banner error:", error);
+    const message = error instanceof Error ? error.message : "Failed to remove from hero banner";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Reorder Hero Banner slides (sets 1-based ranks based on new order of IDs)
+ */
+export async function reorderHeroBannerAction(orderedIds: string[]) {
+  try {
+    await prisma.$transaction(
+      orderedIds.map((id, index) =>
+        prisma.movie.update({
+          where: { id },
+          data: { rank: index + 1, isTopRated: true },
+        })
+      )
+    );
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath("/admin/hero");
+    revalidatePath("/admin/movies");
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Reorder hero banner error:", error);
+    const message = error instanceof Error ? error.message : "Failed to reorder hero banner";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Update details of a hero slide (banner image, trailer video URL, description)
+ */
+export async function updateHeroSlideAction(
+  movieId: string,
+  data: {
+    bannerUrl?: string;
+    videoUrl?: string;
+    description?: string;
+    rating?: number;
+  }
+) {
+  try {
+    const movie = await prisma.movie.update({
+      where: { id: movieId },
+      data: {
+        ...(data.bannerUrl !== undefined ? { bannerUrl: data.bannerUrl } : {}),
+        ...(data.videoUrl !== undefined ? { videoUrl: data.videoUrl } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.rating !== undefined ? { rating: Number(data.rating) } : {}),
+      },
+      include: { genres: true },
+    });
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath("/admin/hero");
+    revalidatePath("/admin/movies");
+
+    return { success: true, movie };
+  } catch (error: unknown) {
+    console.error("Update hero slide error:", error);
+    const message = error instanceof Error ? error.message : "Failed to update hero slide";
     return { success: false, error: message };
   }
 }

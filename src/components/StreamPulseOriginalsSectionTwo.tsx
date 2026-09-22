@@ -30,7 +30,7 @@ export default function StreamPulseOriginalsSection({
       <div className="flex items-center justify-between mb-3.5 sm:mb-4">
         <div className="flex items-center space-x-2">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            MAKE YOU WANT TO WORK HARD
+            MOTIVATIONAL
           </h2>
           <span className="hidden sm:inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-[#EB0028]/15 border border-[#EB0028]/30 text-[#EB0028] text-[10px] font-extrabold uppercase tracking-wider">
             <Sparkles className="w-2.5 h-2.5" />

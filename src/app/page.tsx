@@ -1,4 +1,5 @@
 import {
+  getHeroSlides,
   getTopRatedMovies,
   getActionMovies,
   getAllMovies,
@@ -7,8 +8,9 @@ import {
 import StreamingAppClient from "@/components/StreamingAppClient";
 
 export default async function HomePage() {
-  const [topRatedMovies, actionMovies, allMovies, featuredMovie] =
+  const [heroSlides, topRatedMovies, actionMovies, allMovies, featuredMovie] =
     await Promise.all([
+      getHeroSlides(),
       getTopRatedMovies(),
       getActionMovies(),
       getAllMovies(),
@@ -17,6 +19,7 @@ export default async function HomePage() {
 
   return (
     <StreamingAppClient
+      heroSlides={heroSlides}
       topRatedMovies={topRatedMovies}
       actionMovies={actionMovies}
       allMovies={allMovies}

@@ -4,8 +4,9 @@ import React, { useState, useMemo } from "react";
 import StreamPulseHeader, { NavTab } from "./StreamPulseHeader";
 import HeroBanner from "./HeroBanner";
 import ContinueWatchingSection from "./ContinueWatchingSection";
-import TrendingNowSection from "./MovieSectionTwo";
-import StreamPulseOriginalsSection from "./StreamPulseOriginalsSection";
+import StreamPulseOriginalsSectionOne from "./StreamPulseOriginalsSectionOne";
+import StreamPulseOriginalsSectionTwo from "./StreamPulseOriginalsSectionTwo";
+import MovieSectionThree from "./MovieSectionThree";
 import StreamPulseFooter from "./StreamPulseFooter";
 import MovieDetailsModal from "./MovieDetailsModal";
 import {
@@ -20,6 +21,7 @@ import MovieSectionOne from "./MovieSectionOne";
 import MovieSectionTwo from "./MovieSectionTwo";
 
 interface StreamingAppClientProps {
+  heroSlides?: MovieData[];
   topRatedMovies: MovieData[];
   actionMovies: MovieData[];
   allMovies: MovieData[];
@@ -27,6 +29,7 @@ interface StreamingAppClientProps {
 }
 
 export default function StreamingAppClient({
+  heroSlides,
   topRatedMovies,
   actionMovies,
   allMovies,
@@ -204,7 +207,7 @@ export default function StreamingAppClient({
           <>
             {/* 1. Cinematic Hero Banner */}
             <HeroBanner
-              slides={FEATURED_SLIDES}
+              slides={heroSlides && heroSlides.length > 0 ? heroSlides : FEATURED_SLIDES}
               onPlayMovie={(movie) => setSelectedMovie(movie)}
               onMoreInfo={(movie) => setSelectedMovie(movie)}
             />
@@ -222,13 +225,25 @@ export default function StreamingAppClient({
             />
 
             {/* 4. StreamPulse Originals */}
-            <StreamPulseOriginalsSection
+            <StreamPulseOriginalsSectionOne
               movies={STREAMPULSE_ORIGINALS}
               onSelectMovie={(movie) => setSelectedMovie(movie)}
             />
 
-            {/* 5. Trending Now */}
+            {/* 5. BEST AI */}
             <MovieSectionTwo
+              movies={topRatedMovies}
+              onSelectMovie={(movie) => setSelectedMovie(movie)}
+            />
+
+            {/* 6. LensImpact Exclusive Originals */}
+            <StreamPulseOriginalsSectionTwo
+              movies={STREAMPULSE_ORIGINALS}
+              onSelectMovie={(movie) => setSelectedMovie(movie)}
+            />
+
+            {/* 6. StreamPulse Originals */}
+            <MovieSectionThree
               movies={topRatedMovies}
               onSelectMovie={(movie) => setSelectedMovie(movie)}
             />

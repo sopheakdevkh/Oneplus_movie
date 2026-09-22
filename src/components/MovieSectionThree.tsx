@@ -32,17 +32,17 @@ function PosterImage({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-interface TrendingNowSectionProps {
+interface MovieSectionThreeProps {
   movies: MovieData[];
   onSelectMovie: (movie: MovieData) => void;
   title?: string;
 }
 
-export default function TrendingNowSection({
+export default function MovieSectionThree({
   movies,
   onSelectMovie,
   title = "BEST AI",
-}: TrendingNowSectionProps) {
+}: MovieSectionThreeProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {

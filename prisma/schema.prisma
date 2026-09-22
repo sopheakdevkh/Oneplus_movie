@@ -9,8 +9,9 @@ datasource db {
 }
 
 enum Role {
-  USER @map("user")
-  ADMIN @map("admin")
+  USER
+  ADMIN
+  SUBSCRIBER
 }
 
 model User {

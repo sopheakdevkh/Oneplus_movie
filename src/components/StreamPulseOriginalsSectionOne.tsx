@@ -1,53 +1,24 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Star, Play, Film } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, Play, Sparkles } from "lucide-react";
 import { MovieData } from "../lib/movies";
 
-function PosterImage({ src, alt }: { src: string; alt: string }) {
-  const [hasError, setHasError] = useState(false);
-
-  if (hasError || !src) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1C1F2B] to-[#0F1015] p-4 text-center">
-        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-2">
-          <Film className="w-5 h-5 text-[#FF5500]" />
-        </div>
-        <span className="font-bold text-white text-xs line-clamp-2 px-1">{alt}</span>
-      </div>
-    );
-  }
-
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      fill
-      unoptimized
-      onError={() => setHasError(true)}
-      sizes="(max-width: 640px) 180px, (max-width: 1024px) 210px, 240px"
-      className="object-cover transition-transform duration-500 group-hover:scale-105"
-    />
-  );
-}
-
-interface TrendingNowSectionProps {
+interface StreamPulseOriginalsSectionProps {
   movies: MovieData[];
   onSelectMovie: (movie: MovieData) => void;
-  title?: string;
 }
 
-export default function TrendingNowSection({
+export default function StreamPulseOriginalsSection({
   movies,
   onSelectMovie,
-  title = "BEST AI",
-}: TrendingNowSectionProps) {
+}: StreamPulseOriginalsSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
-    const offset = direction === "left" ? -320 : 320;
+    const offset = direction === "left" ? -380 : 380;
     scrollRef.current.scrollBy({ left: offset, behavior: "smooth" });
   };
 
@@ -57,9 +28,15 @@ export default function TrendingNowSection({
     <section className="w-full px-4 sm:px-8 md:px-12 lg:px-16 py-5 sm:py-7">
       {/* Section Header */}
       <div className="flex items-center justify-between mb-3.5 sm:mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-          {title}
-        </h2>
+        <div className="flex items-center space-x-2">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            TO WORK HARD
+          </h2>
+          <span className="hidden sm:inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-[#EB0028]/15 border border-[#EB0028]/30 text-[#EB0028] text-[10px] font-extrabold uppercase tracking-wider">
+            <Sparkles className="w-2.5 h-2.5" />
+            <span>LensImpact Exclusive</span>
+          </span>
+        </div>
 
         <div className="flex items-center space-x-2">
           <button
@@ -79,31 +56,46 @@ export default function TrendingNowSection({
         </div>
       </div>
 
-      {/* Horizontal Scroll of Vertical Poster Cards */}
+      {/* Horizontal Carousel List */}
       <div
         ref={scrollRef}
         className="flex space-x-4 sm:space-x-5 overflow-x-auto no-scrollbar scroll-smooth pb-2"
       >
         {movies.map((movie) => {
-          const hours = Math.floor(movie.duration / 60);
-          const mins = movie.duration % 60;
-          const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-
           return (
             <div
               key={movie.id}
               onClick={() => onSelectMovie(movie)}
-              className="group flex-shrink-0 w-44 sm:w-48 md:w-56 cursor-pointer select-none"
+              className="group flex-shrink-0 w-64 sm:w-72 md:w-80 cursor-pointer select-none"
             >
-              {/* Vertical Card Poster */}
-              <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#161822] border border-white/10 shadow-lg group-hover:border-[#FF5500]/50 group-hover:scale-[1.03] transition-all duration-300">
-                <PosterImage src={movie.posterUrl} alt={movie.title} />
+              {/* 16:9 Stylized Original Card */}
+              <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-[#161822] border border-white/10 shadow-lg group-hover:border-[#FF5500]/50 group-hover:scale-[1.02] transition-all duration-300">
+                <Image
+                  src={movie.bannerUrl || movie.posterUrl}
+                  alt={movie.title}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 640px) 260px, (max-width: 1024px) 300px, 340px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
 
-                {/* Subtle vignette */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Dark atmospheric overlay for title presentation */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30" />
+
+                {/* 1+ Brand Mini Pill top left */}
+                <div className="absolute top-3 left-3 flex items-center space-x-1 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/15 text-[10px] font-black text-[#EB0028]">
+                  <span>1+ ORIGINAL</span>
+                </div>
+
+                {/* Stylized Center Display Title */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+                  <span className="font-black text-lg sm:text-xl md:text-2xl text-white uppercase tracking-wider drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+                    {movie.title}
+                  </span>
+                </div>
 
                 {/* Hover Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/30 backdrop-blur-[2px]">
                   <div className="w-11 h-11 rounded-full bg-[#FF5500] text-white flex items-center justify-center shadow-[0_0_20px_rgba(255,85,0,0.6)]">
                     <Play className="w-5 h-5 fill-white ml-0.5" />
                   </div>
@@ -124,7 +116,7 @@ export default function TrendingNowSection({
                     <span>{movie.rating.toFixed(1)}</span>
                   </div>
                   <span className="text-white/30">•</span>
-                  <span>{durationStr}</span>
+                  <span>{movie.duration}m</span>
                 </div>
               </div>
             </div>

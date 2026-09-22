@@ -71,3 +71,22 @@ export async function getAllMovies(): Promise<MovieData[]> {
 export async function getFeaturedSpotlight(): Promise<MovieData> {
   return FEATURED_SERIES;
 }
+
+export async function getHeroSlides(): Promise<MovieData[]> {
+  try {
+    if (process.env.DATABASE_URL) {
+      const dbHero = await prisma.movie.findMany({
+        where: { isTopRated: true },
+        include: { genres: true },
+        orderBy: { rank: "asc" },
+      });
+      if (dbHero.length > 0) {
+        return dbHero as unknown as MovieData[];
+      }
+    }
+  } catch (error) {
+    console.warn("Prisma hero slides fallback:", error);
+  }
+
+  return FEATURED_SLIDES;
+}
