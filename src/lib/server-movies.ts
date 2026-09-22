@@ -4,6 +4,7 @@ import {
   EXACT_MOVIES,
   TRENDING_MOVIES,
   FEATURED_SERIES,
+  FEATURED_SLIDES,
 } from "./movies";
 
 export async function getTopRatedMovies(): Promise<MovieData[]> {
