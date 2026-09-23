@@ -37,19 +37,32 @@ export async function POST(request: NextRequest) {
     const cleanOrigin = origin.replace(/\/$/, "");
 
     // 4. Configure recurring line items:
-    // If a Stripe price ID (e.g. 'price_1...') is provided, use it directly;
-    // Otherwise, create an inline recurring price item for frictionless testing.
+    // If a Stripe price ID (from request body or STRIPE_PRICE_ID_MONTHLY / STRIPE_PRICE_ID_YEARLY in .env) is provided, use it directly;
+    // Otherwise, create an inline recurring price item ($4.99/mo or $49/yr).
+    const isYearly = plan === "yearly" || priceId === "yearly";
+    const envPriceId = isYearly
+      ? process.env.STRIPE_PRICE_ID_YEARLY
+      : process.env.STRIPE_PRICE_ID_MONTHLY;
+
+    const isRealPriceId = (id?: string | null) =>
+      Boolean(id && id.startsWith("price_") && !id.includes("..."));
+
+    const resolvedPriceId = isRealPriceId(priceId)
+      ? priceId
+      : isRealPriceId(envPriceId)
+      ? envPriceId
+      : null;
+
     let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
 
-    if (priceId && priceId.startsWith("price_")) {
+    if (resolvedPriceId) {
       lineItems = [
         {
-          price: priceId,
+          price: resolvedPriceId,
           quantity: 1,
         },
       ];
     } else {
-      const isYearly = plan === "yearly" || priceId === "yearly";
       const unitAmount = isYearly ? 4900 : 499; // $49.00 or $4.99 in cents
       const interval = isYearly ? "year" : "month";
 
@@ -104,12 +117,17 @@ export async function POST(request: NextRequest) {
         billing_address_collection: "auto",
       });
     } catch (stripeError: unknown) {
-      console.warn(
-        "Stripe API call failed (possibly placeholder key). Returning simulated session:",
-        stripeError
-      );
+      console.error("Stripe Checkout Session creation error:", stripeError);
 
-      // Graceful fallback for local development if STRIPE_SECRET_KEY is not yet provisioned
+      // In production, strictly reject and never issue mock checkout passes
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { error: "Payment processor is unavailable. Please verify payment configuration." },
+          { status: 502 }
+        );
+      }
+
+      // Local development fallback only when working without live Stripe keys
       const mockSessionId = `cs_test_${Math.random().toString(36).substring(2, 14)}`;
       const mockRedirectUrl = `${cleanOrigin}/dashboard?payment=success&session_id=${mockSessionId}&mock=true`;
 
@@ -121,7 +139,7 @@ export async function POST(request: NextRequest) {
           user_email: user.email,
         },
         isMock: true,
-        note: "Stripe key not configured in environment. Returned development checkout session.",
+        note: "[DEV ONLY] Stripe key unprovisioned. Returned local simulated checkout.",
       });
     }
 

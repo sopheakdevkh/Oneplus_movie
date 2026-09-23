@@ -12,6 +12,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+import { useAuth } from "@/context/AuthContext";
+
 interface PaywallGateProps {
   isSubscriber?: boolean;
   moduleName?: string;
@@ -20,13 +22,18 @@ interface PaywallGateProps {
 }
 
 export default function PaywallGate({
-  isSubscriber: initialSubscriber = false,
+  isSubscriber: propSubscriber,
   moduleName = "Impact Guide",
   children,
   fallbackTeaser,
 }: PaywallGateProps) {
+  const { isMember, isAdmin } = useAuth();
+  const effectiveSubscriber =
+    propSubscriber !== undefined ? propSubscriber : isMember || isAdmin;
+
   // Allow interactive toggle for developer / viewer testing
-  const [isSubscriber, setIsSubscriber] = useState(initialSubscriber);
+  const [devOverride, setDevOverride] = useState<boolean | null>(null);
+  const isSubscriber = devOverride !== null ? devOverride : effectiveSubscriber;
 
   if (isSubscriber) {
     return (
@@ -39,7 +46,7 @@ export default function PaywallGate({
           </div>
           <button
             type="button"
-            onClick={() => setIsSubscriber(false)}
+            onClick={() => setDevOverride(false)}
             className="text-[10px] text-white/40 hover:text-white/70 transition-colors underline cursor-pointer"
             title="Preview how free users see this section"
           >
@@ -109,7 +116,7 @@ export default function PaywallGate({
             {/* Quick Toggle for testing/evaluation */}
             <button
               type="button"
-              onClick={() => setIsSubscriber(true)}
+              onClick={() => setDevOverride(true)}
               className="text-[11px] text-white/50 hover:text-white px-3 py-2 rounded-xl transition-colors cursor-pointer"
             >
               Simulate Subscribed View

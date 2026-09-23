@@ -34,108 +34,26 @@ import { MovieData } from "../lib/movies";
 import { getBannerBackdropUrl, getPosterCardUrl } from "../lib/cloudinary";
 import { parseVideoSource } from "../lib/video";
 import PaywallGate from "@/components/pricing/PaywallGate";
-import WatchlistButton from "@/components/WatchlistButton";
+import WatchlistButton from "@/components/watchlist/WatchlistButton";
 import DiscussionForum from "@/components/comments/DiscussionForum";
 import { useAuth } from "@/context/AuthContext";
+import { CastMember, CastDataConfig, getCastForMovie } from "@/lib/cast";
+import { getCastConfigAction } from "@/app/actions/cast";
 
 interface MovieDetailsModalProps {
   movie: MovieData | null;
   allMovies?: MovieData[];
+  castConfig?: CastDataConfig;
   onSelectMovie?: (movie: MovieData) => void;
   onClose: () => void;
 }
 
 type TabType = "overview" | "impact" | "lessons" | "community" | "cast" | "more" | "specs";
 
-// Cast metadata mapping for rich cinematic presentation
-const CAST_DATA: Record<
-  string,
-  Array<{ name: string; role: string; avatar: string }>
-> = {
-  "John wick 4": [
-    {
-      name: "Keanu Reeves",
-      role: "John Wick",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      name: "Donnie Yen",
-      role: "Caine",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      name: "Bill Skarsgård",
-      role: "Marquis",
-      avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      name: "Laurence Fishburne",
-      role: "Bowery King",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
-    },
-  ],
-  "Aquaman 2": [
-    {
-      name: "Jason Momoa",
-      role: "Arthur Curry / Aquaman",
-      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      name: "Patrick Wilson",
-      role: "Orm Marius",
-      avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      name: "Yahya Abdul-Mateen II",
-      role: "Black Manta",
-      avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80",
-    },
-  ],
-  "Transformers: Rise of the Beasts": [
-    {
-      name: "Anthony Ramos",
-      role: "Noah Diaz",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      name: "Dominique Fishback",
-      role: "Elena Wallace",
-      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80",
-    },
-    {
-      name: "Peter Cullen",
-      role: "Optimus Prime (Voice)",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-    },
-  ],
-};
-
-const DEFAULT_CAST = [
-  {
-    name: "Alex Cross",
-    role: "Lead Protagonist",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
-  },
-  {
-    name: "Elena Vance",
-    role: "Special Operative",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-  },
-  {
-    name: "Marcus Kane",
-    role: "Tactical Commander",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-  },
-  {
-    name: "Sarah Chen",
-    role: "Intelligence Officer",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80",
-  },
-];
-
 export default function MovieDetailsModal({
   movie,
   allMovies = [],
+  castConfig,
   onSelectMovie,
   onClose,
 }: MovieDetailsModalProps) {
@@ -294,13 +212,37 @@ export default function MovieDetailsModal({
       .slice(0, 4);
   }, [allMovies, movie]);
 
+  // Dynamic Cast & Crew resolution (props or client fallback)
+  const [localCastConfig, setLocalCastConfig] = useState<CastDataConfig | null>(castConfig || null);
+
+  useEffect(() => {
+    if (castConfig) {
+      setLocalCastConfig(castConfig);
+      return;
+    }
+    let isMounted = true;
+    getCastConfigAction()
+      .then((cfg) => {
+        if (isMounted) setLocalCastConfig(cfg);
+      })
+      .catch((err) => console.warn("Failed to fetch dynamic cast config:", err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [castConfig]);
+
+  const castList = useMemo(() => {
+    if (!movie) return [];
+    return getCastForMovie(movie.title, localCastConfig || castConfig);
+  }, [movie?.title, localCastConfig, castConfig]);
+
   if (!movie) return null;
 
   const hours = Math.floor(movie.duration / 60);
   const mins = movie.duration % 60;
   const durationText = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   const backdropUrl = getBannerBackdropUrl(movie.bannerUrl || movie.posterUrl, 1440, 810);
-  const castList = CAST_DATA[movie.title] || DEFAULT_CAST;
 
   return (
     <div
@@ -317,11 +259,11 @@ export default function MovieDetailsModal({
 
       {/* Main Modal Container: Native-like bottom-sheet on mobile, floating theater on desktop */}
       <div
-        className="relative w-full max-w-5xl h-[94vh] sm:h-auto sm:max-h-[92vh] overflow-y-auto no-scrollbar rounded-t-[32px] sm:rounded-3xl bg-[#090A0F] border border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_50px_rgba(0,240,255,0.06)] text-white flex flex-col"
+        className="relative w-full max-w-5xl h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-y-auto no-scrollbar rounded-t-[28px] sm:rounded-3xl bg-[#090A0F] border border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.95),0_0_50px_rgba(0,240,255,0.06)] text-white flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Mobile iOS-style drag pill */}
-        <div className="sm:hidden w-12 h-1.5 bg-white/20 rounded-full mx-auto my-2.5 flex-shrink-0" />
+        {/* Mobile iOS-style drag pill (floating over video) */}
+        <div className="sm:hidden absolute top-2.5 left-1/2 -translate-x-1/2 z-40 w-12 h-1.5 bg-white/40 backdrop-blur-md rounded-full pointer-events-none shadow-sm" />
 
         {/* Ambient Backlight Glow Effect behind video */}
         <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-[#00F0FF]/10 via-[#FF9F0A]/5 to-transparent blur-3xl pointer-events-none -z-10" />
@@ -329,7 +271,7 @@ export default function MovieDetailsModal({
         {/* Close Button (floating glass circle) */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 sm:top-5 sm:right-5 z-40 p-2.5 rounded-full bg-black/70 hover:bg-black/90 text-white/80 hover:text-white border border-white/15 backdrop-blur-md transition-all shadow-xl active:scale-95 group"
+          className="absolute top-3 right-3 sm:top-5 sm:right-5 z-40 p-2 sm:p-2.5 rounded-full bg-black/70 hover:bg-black/90 text-white/80 hover:text-white border border-white/15 backdrop-blur-md transition-all shadow-xl active:scale-95 group"
           aria-label="Close modal"
         >
           <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" />
@@ -342,7 +284,7 @@ export default function MovieDetailsModal({
           ref={playerContainerRef}
           onMouseMove={handleUserActivity}
           onTouchStart={handleUserActivity}
-          className="relative aspect-[16/9] w-full bg-black flex-shrink-0 overflow-hidden rounded-t-[28px] sm:rounded-t-3xl group select-none"
+          className="relative w-full h-[42dvh] min-h-[300px] max-h-[460px] sm:h-auto sm:min-h-0 sm:max-h-none sm:aspect-[16/9] bg-black flex-shrink-0 overflow-hidden rounded-t-[28px] sm:rounded-t-3xl group select-none"
         >
           {isPlaying && videoSource ? (
             <div className="relative w-full h-full bg-black">
@@ -379,7 +321,7 @@ export default function MovieDetailsModal({
                     allowFullScreen
                   />
                   {/* Floating Exit Video / Back to Poster Pill */}
-                  <div className="absolute top-4 left-4 z-30">
+                  <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-30">
                     <button
                       onClick={() => setIsPlaying(false)}
                       className="px-3 py-1.5 rounded-full bg-black/80 hover:bg-black text-white/90 hover:text-white border border-white/20 backdrop-blur-md transition-all flex items-center space-x-1.5 text-xs font-semibold shadow-lg group active:scale-95"
@@ -558,7 +500,7 @@ export default function MovieDetailsModal({
               <div className="absolute inset-0 bg-gradient-to-t from-[#090A0F] via-black/40 to-black/20" />
 
               {/* Quality & Audio Badges in Top Left */}
-              <div className="absolute top-4 left-4 flex items-center space-x-2">
+              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center space-x-1.5 sm:space-x-2">
                 <span className="px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[10px] sm:text-xs font-black uppercase tracking-wider text-white">
                   IMAX ENHANCED
                 </span>

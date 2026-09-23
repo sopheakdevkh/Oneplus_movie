@@ -39,21 +39,6 @@ export interface ContinueWatchingItem {
   movie: MovieData;
 }
 
-export interface UserProfile {
-  id: string;
-  name: string;
-  handle?: string;
-  avatarBg: string;
-  icon: string;
-}
-
-export const USER_PROFILES: UserProfile[] = [
-  { id: "p1", name: "Sharma", handle: "@uxid.sharmaasd...", avatarBg: "bg-emerald-500", icon: "👤" },
-  { id: "p2", name: "Divi boo", avatarBg: "bg-orange-500", icon: "🦊" },
-  { id: "p3", name: "Adhi", avatarBg: "bg-amber-400", icon: "🦁" },
-  { id: "p4", name: "Harsha", avatarBg: "bg-teal-400", icon: "🐼" },
-];
-
 // 1. Featured Hero Card from screenshot: Spider-Man: Across the Spider-Verse
 export const HERO_SPIDERMAN: MovieData = {
   id: "hero-spiderman",

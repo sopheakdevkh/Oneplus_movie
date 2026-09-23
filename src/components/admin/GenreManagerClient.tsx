@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Tags,
   Film,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   TrendingUp,
   Hash,
+  Sliders,
 } from "lucide-react";
 import {
   createGenreAction,
@@ -102,10 +104,10 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
               : g
           )
         );
-        showNotification(`Updated genre "${res.genre.name}" successfully.`);
+        showNotification(`Updated category "${res.genre.name}" successfully.`);
         setModalOpen(false);
       } else {
-        showNotification(res.error || "Failed to update genre", "error");
+        showNotification(res.error || "Failed to update category", "error");
       }
     } else {
       // CREATE
@@ -120,10 +122,10 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
             _count: { movies: 0 },
           },
         ]);
-        showNotification(`Created genre "${res.genre.name}" successfully.`);
+        showNotification(`Created category "${res.genre.name}" successfully.`);
         setModalOpen(false);
       } else {
-        showNotification(res.error || "Failed to create genre", "error");
+        showNotification(res.error || "Failed to create category", "error");
       }
     }
 
@@ -138,10 +140,10 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
     const res = await deleteGenreAction(deletingGenre.id);
     if (res.success) {
       setGenres((prev) => prev.filter((g) => g.id !== deletingGenre.id));
-      showNotification(`Deleted genre "${deletingGenre.name}".`);
+      showNotification(`Deleted category "${deletingGenre.name}".`);
       setDeletingGenre(null);
     } else {
-      showNotification(res.error || "Failed to delete genre", "error");
+      showNotification(res.error || "Failed to delete category", "error");
     }
     setIsDeleting(false);
   };
@@ -196,24 +198,31 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
               1+
             </div>
             <span className="text-[11px] font-black uppercase tracking-widest text-[#EB0028]">
-              Genre Taxonomy &amp; Categories
+              Category &amp; Genre Taxonomy
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Movie &amp; Series Genres
+            Movie &amp; Series Categories
           </h1>
           <p className="text-xs text-[#8E8E93] mt-0.5">
-            Create, organize, and manage streaming genre classifications for catalog filtering.
+            Create, organize, and manage streaming category classifications for catalog filtering.
           </p>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/admin/categories"
+            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-semibold transition-all"
+          >
+            <Sliders className="w-3.5 h-3.5 text-[#FF5500]" />
+            <span>Category Rules &amp; Limits</span>
+          </Link>
           <button
             onClick={openCreateModal}
-            className="flex items-center space-x-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#EB0028] hover:bg-[#FF1A35] text-white text-xs font-bold shadow-[0_0_20px_rgba(235,0,40,0.4)] hover:shadow-[0_0_25px_rgba(235,0,40,0.6)] transition-all active:scale-95"
+            className="flex items-center space-x-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#EB0028] hover:bg-[#FF1A35] text-white text-xs font-bold shadow-[0_0_20px_rgba(235,0,40,0.4)] hover:shadow-[0_0_25px_rgba(235,0,40,0.6)] transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add New Genre</span>
+            <span>Add New Category</span>
           </button>
         </div>
       </div>
@@ -463,7 +472,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
                   <Tags className="w-3.5 h-3.5" />
                 </div>
                 <h3 className="font-bold text-white text-base">
-                  {editingGenre ? `Edit Genre: ${editingGenre.name}` : "Create New Genre"}
+                  {editingGenre ? `Edit Category: ${editingGenre.name}` : "Create New Category"}
                 </h3>
               </div>
               <button
@@ -478,13 +487,13 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-[#8E8E93] mb-1.5">
-                  Genre Name *
+                  Category Name *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={handleNameChange}
-                  placeholder="e.g. Science Fiction, Anime, Romance..."
+                  placeholder="e.g. Mindset & Personal Growth, Sci-Fi, Award Shorts..."
                   required
                   autoFocus
                   className="w-full h-11 px-3.5 rounded-xl bg-[#1B1D2A] border border-white/10 text-white text-sm focus:border-[#EB0028] focus:ring-1 focus:ring-[#EB0028] focus:outline-none transition-all"
@@ -499,7 +508,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
                   type="text"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="e.g. science-fiction"
+                  placeholder="e.g. mindset-growth"
                   className="w-full h-11 px-3.5 rounded-xl bg-[#1B1D2A] border border-white/10 text-white text-sm focus:border-[#EB0028] focus:ring-1 focus:ring-[#EB0028] focus:outline-none transition-all"
                 />
               </div>
@@ -508,7 +517,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
               <div className="p-3 rounded-xl bg-[#1B1D2A] border border-white/5 flex items-center justify-between">
                 <span className="text-[11px] text-[#8E8E93]">Live Pill Preview:</span>
                 <span className="px-3 py-1 rounded-full bg-[#EB0028]/15 border border-[#EB0028]/30 text-[#EB0028] text-xs font-bold">
-                  {formData.name || "Preview Genre"}
+                  {formData.name || "Preview Category"}
                 </span>
               </div>
 
@@ -526,7 +535,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
                   disabled={isSubmitting}
                   className="px-5 py-2.5 rounded-xl bg-[#EB0028] hover:bg-[#FF1A35] text-white text-xs font-bold shadow-[0_0_15px_rgba(235,0,40,0.4)] transition-all disabled:opacity-50 active:scale-95"
                 >
-                  {isSubmitting ? "Saving..." : editingGenre ? "Update Genre" : "Create Genre"}
+                  {isSubmitting ? "Saving..." : editingGenre ? "Update Category" : "Create Category"}
                 </button>
               </div>
             </form>
@@ -544,7 +553,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
               </div>
               <div>
                 <h3 className="font-bold text-white text-base">
-                  Delete Genre: {deletingGenre.name}?
+                  Delete Category: {deletingGenre.name}?
                 </h3>
                 <p className="text-xs text-[#8E8E93] mt-0.5">
                   This action cannot be undone.
@@ -554,7 +563,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
 
             {Boolean(deletingGenre._count?.movies) && (
               <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
-                ⚠️ Warning: <strong>{deletingGenre._count?.movies}</strong> movies are currently tagged with this genre. Deleting it will detach the genre tag from those movies.
+                ⚠️ Warning: <strong>{deletingGenre._count?.movies}</strong> movies are currently assigned to this category. Deleting it will detach the category classification from those movies.
               </div>
             )}
 

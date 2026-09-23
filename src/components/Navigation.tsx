@@ -143,6 +143,18 @@ export default function Navigation({
     };
   }, [isMobileMenuOpen]);
 
+  // Dynamic tabs: Hide "My List" for normal visit users (guests)
+  const visibleTabs: NavTab[] = isGuest
+    ? ["Browse", "TV Shows", "Movies", "New & Popular"]
+    : ["Browse", "TV Shows", "Movies", "New & Popular", "My List"];
+
+  // If a guest lands on or has "My List" active, automatically redirect to "Browse"
+  useEffect(() => {
+    if (isGuest && activeTab === "My List" && onTabChange) {
+      onTabChange("Browse");
+    }
+  }, [isGuest, activeTab, onTabChange]);
+
   // Handle Tab navigation
   const handleTabClick = (tab: NavTab) => {
     if (onTabChange) {
@@ -173,27 +185,36 @@ export default function Navigation({
           <LensImpactLogo size="md" href="/" />
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8 text-sm" aria-label="Main Navigation">
-            {NAV_TABS.map((tab) => {
+          <nav className="hidden md:flex items-center space-x-1 lg:space-x-1.5" aria-label="Main Navigation">
+            {visibleTabs.map((tab) => {
               const isActive = activeTab === tab;
               return (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => handleTabClick(tab)}
-                  className={`font-semibold transition-all relative py-1 focus:outline-none ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs lg:text-sm font-semibold transition-all duration-200 focus:outline-none relative ${
                     isActive
-                      ? "text-white font-bold"
-                      : "text-white/70 hover:text-white"
+                      ? "text-white font-bold bg-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.18)] ring-1 ring-white/20"
+                      : "text-white/70 hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
-                  {tab}
+                  <span>{tab}</span>
                   {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#EB0029] rounded-full shadow-[0_0_10px_#EB0029]" />
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-gradient-to-r from-[#FF5500] to-[#EB0029] rounded-full shadow-[0_0_8px_#EB0029]" />
                   )}
                 </button>
               );
             })}
+
+            {/* Dedicated VIP Club direct link for visitors and members */}
+            <Link
+              href="/pricing"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-amber-300 hover:text-amber-200 bg-gradient-to-r from-amber-500/15 to-red-500/15 hover:from-amber-500/25 hover:to-red-500/25 border border-amber-400/30 transition-all shadow-[0_0_12px_rgba(245,158,11,0.15)] ml-1 hover:scale-105 active:scale-95"
+            >
+              <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span>VIP Club</span>
+            </Link>
           </nav>
         </div>
 
@@ -241,14 +262,22 @@ export default function Navigation({
           )}
 
           {/* ======================================================= */}
-          {/* 1. GUEST STATE: Clean Sign In link + Red Join Free CTA   */}
+          {/* 1. GUEST STATE: VIP Plans Link + Sign In + Join Club CTA */}
           {/* ======================================================= */}
           {isGuest && (
-            <div className="hidden sm:flex items-center space-x-3 sm:space-x-4">
+            <div className="hidden sm:flex items-center space-x-2 sm:space-x-3">
+              <Link
+                href="/pricing"
+                className="hidden xl:inline-flex items-center space-x-1.5 text-xs font-bold text-amber-300 hover:text-amber-200 transition-colors px-3 py-1.5 rounded-full hover:bg-amber-400/10 border border-transparent hover:border-amber-400/20"
+              >
+                <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span>Plans &amp; Perks</span>
+              </Link>
+
               <button
                 type="button"
                 onClick={() => openAuthModal({ defaultTab: "signin" })}
-                className="text-white/80 hover:text-white font-semibold text-xs sm:text-sm transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5"
+                className="text-xs sm:text-sm font-semibold text-white/80 hover:text-white transition-colors px-3.5 py-1.5 rounded-full hover:bg-white/10 border border-white/10 hover:border-white/20"
               >
                 Sign In
               </button>
@@ -256,34 +285,39 @@ export default function Navigation({
               <button
                 type="button"
                 onClick={() => openAuthModal({ defaultTab: "signup" })}
-                className="inline-flex items-center justify-center font-bold text-xs sm:text-sm px-4 py-2 rounded-full bg-[#EB0029] hover:bg-[#c00022] text-white shadow-[0_0_15px_rgba(235,0,41,0.4)] hover:shadow-[0_0_24px_rgba(235,0,41,0.65)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center space-x-1.5 font-bold text-xs sm:text-sm px-4 py-2 rounded-full bg-gradient-to-r from-[#FF5500] to-[#EB0029] hover:from-[#ff6b1a] hover:to-[#ff1a40] text-white shadow-[0_0_20px_rgba(235,0,41,0.45)] hover:shadow-[0_0_28px_rgba(235,0,41,0.7)] transition-all hover:scale-[1.02] active:scale-[0.98] border border-white/20"
               >
-                Join Free
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Join Club</span>
               </button>
             </div>
           )}
 
           {/* ======================================================= */}
-          {/* 2. FREE USER: "Go Premium" Glowing Button + Avatar Menu */}
+          {/* 2. FREE USER: "Upgrade to VIP" Button + Avatar Menu    */}
           {/* ======================================================= */}
           {isFreeUser && (
             <Link
               href="/pricing"
-              className="hidden sm:inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FF5500] to-[#EB0029] hover:from-[#ff6b1a] hover:to-[#ff1a40] text-white text-xs font-black shadow-[0_0_18px_rgba(255,85,0,0.5)] hover:shadow-[0_0_26px_rgba(255,85,0,0.75)] transition-all animate-pulse duration-1000 group hover:scale-105"
+              className="hidden sm:inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-[#FF5500] to-[#EB0029] hover:from-amber-400 hover:to-[#ff1a40] text-white text-xs font-black shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:shadow-[0_0_28px_rgba(245,158,11,0.6)] transition-all hover:scale-105 group border border-amber-300/30"
             >
-              <Sparkles className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
-              <span>Go Premium</span>
+              <Crown className="w-3.5 h-3.5 fill-white" />
+              <span>Upgrade to VIP</span>
             </Link>
           )}
 
           {/* ======================================================= */}
-          {/* 3. PAID MEMBER: Gold/Red Member Indicator               */}
+          {/* 3. PAID MEMBER: Gold VIP Member Indicator               */}
           {/* ======================================================= */}
           {isPaidMember && (
-            <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#FFD700]/15 to-[#EB0029]/15 border border-[#FFD700]/40 text-[#FFD700] text-[11px] font-black uppercase tracking-wider shadow-[0_0_12px_rgba(255,215,0,0.25)]">
-              <Crown className="w-3.5 h-3.5 fill-[#FFD700]" />
-              <span>Club Member</span>
-            </div>
+            <Link
+              href="/pricing"
+              className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-red-500/20 border border-amber-400/40 text-amber-300 text-xs font-black uppercase tracking-wider shadow-[0_0_16px_rgba(245,158,11,0.3)] hover:scale-105 transition-all"
+              title="Active VIP Club Membership • Manage Plan"
+            >
+              <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 animate-pulse" />
+              <span>VIP Member</span>
+            </Link>
           )}
 
           {/* ======================================================= */}
@@ -317,7 +351,7 @@ export default function Navigation({
                     isAdminUser
                       ? "ring-2 ring-[#EB0029] shadow-[0_0_12px_rgba(235,0,41,0.5)] bg-[#1A1114]"
                       : isPaidMember
-                      ? "ring-2 ring-[#FFD700] shadow-[0_0_14px_rgba(255,215,0,0.45)] bg-[#1F190D]"
+                      ? "ring-2 ring-amber-400 shadow-[0_0_16px_rgba(245,158,11,0.5)] bg-gradient-to-br from-[#261E0E] to-[#120F08]"
                       : "ring-1 ring-white/20 group-hover:ring-[#FF5500]/50 bg-[#161822]"
                   }`}
                 >
@@ -326,7 +360,7 @@ export default function Navigation({
                       isAdminUser
                         ? "text-[#EB0029]"
                         : isPaidMember
-                        ? "text-[#FFD700]"
+                        ? "text-amber-300"
                         : "text-white"
                     }`}
                   >
@@ -358,6 +392,12 @@ export default function Navigation({
                 <span className="hidden md:inline-block text-xs sm:text-sm font-bold text-white/90 group-hover:text-white max-w-[110px] truncate">
                   {displayName}
                 </span>
+
+                {isPaidMember && (
+                  <span className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                    VIP
+                  </span>
+                )}
 
                 <ChevronDown
                   className={`w-3.5 h-3.5 text-white/70 group-hover:text-white transition-transform duration-200 ${
@@ -416,17 +456,20 @@ export default function Navigation({
                   {/* State-specific Navigation Options                   */}
                   {/* =================================================== */}
 
-                  {/* FREE USER: [My Watchlist, Account Settings, Sign Out] */}
+                  {/* FREE USER: [Upgrade VIP banner, My Watchlist, Account Settings, Sign Out] */}
                   {isFreeUser && (
-                    <div className="space-y-0.5 py-1">
+                    <div className="space-y-1 py-1">
                       {/* Go Premium CTA inside dropdown */}
                       <Link
                         href="/pricing"
                         onClick={() => setIsProfileOpen(false)}
-                        className="flex items-center space-x-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#FF5500]/15 to-[#EB0029]/15 hover:from-[#FF5500]/25 hover:to-[#EB0029]/25 text-[#FF5500] border border-[#FF5500]/30 transition-colors font-bold"
+                        className="flex items-center space-x-2.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-[#FF5500]/20 to-[#EB0029]/20 hover:from-amber-500/30 hover:to-[#EB0029]/30 text-amber-300 border border-amber-400/30 transition-all font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]"
                       >
-                        <Sparkles className="w-4 h-4 text-[#FF5500]" />
-                        <span>Upgrade to Club Member</span>
+                        <Crown className="w-4 h-4 fill-amber-400 text-amber-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-white">Upgrade to VIP Member</p>
+                          <p className="text-[10px] text-amber-300/80 font-normal">Unlock 4K UHD &amp; Study Guides</p>
+                        </div>
                       </Link>
 
                       <Link
@@ -449,15 +492,20 @@ export default function Navigation({
                     </div>
                   )}
 
-                  {/* PAID MEMBER: [My Watchlist, Member Lounge, Billing & Plan, Sign Out] */}
+                  {/* PAID MEMBER: [VIP Active Pill, My Watchlist, Member Lounge, Billing & Plan, Sign Out] */}
                   {isPaidMember && (
-                    <div className="space-y-0.5 py-1">
+                    <div className="space-y-1 py-1">
+                      <div className="px-3 py-1.5 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-300 flex items-center space-x-2">
+                        <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span className="text-[11px] font-bold">Active VIP Club Membership</span>
+                      </div>
+
                       <Link
                         href="/dashboard"
                         onClick={() => setIsProfileOpen(false)}
                         className="flex items-center space-x-2.5 px-3 py-2 rounded-xl hover:bg-white/10 text-white/90 hover:text-white transition-colors"
                       >
-                        <Bookmark className="w-4 h-4 text-[#FFD700]" />
+                        <Bookmark className="w-4 h-4 text-amber-400" />
                         <span>My Watchlist</span>
                       </Link>
 
@@ -466,7 +514,7 @@ export default function Navigation({
                         onClick={() => setIsProfileOpen(false)}
                         className="flex items-center space-x-2.5 px-3 py-2 rounded-xl hover:bg-[#FFD700]/10 text-white/90 hover:text-[#FFD700] transition-colors"
                       >
-                        <Sparkles className="w-4 h-4 text-[#FFD700]" />
+                        <Sparkles className="w-4 h-4 text-amber-400" />
                         <span className="font-semibold">Member Lounge</span>
                       </Link>
 
@@ -476,7 +524,16 @@ export default function Navigation({
                         className="flex items-center space-x-2.5 px-3 py-2 rounded-xl hover:bg-white/10 text-white/90 hover:text-white transition-colors"
                       >
                         <CreditCard className="w-4 h-4 text-[#8E8E93]" />
-                        <span>Billing &amp; Plan</span>
+                        <span>Manage Subscription</span>
+                      </Link>
+
+                      <Link
+                        href="/dashboard#settings"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center space-x-2.5 px-3 py-2 rounded-xl hover:bg-white/10 text-white/90 hover:text-white transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-[#8E8E93]" />
+                        <span>Account Settings</span>
                       </Link>
                     </div>
                   )}
@@ -490,7 +547,7 @@ export default function Navigation({
                         className="flex items-center space-x-2.5 px-3 py-2 rounded-xl bg-[#EB0029]/15 hover:bg-[#EB0029]/25 text-[#EB0029] border border-[#EB0029]/30 font-bold transition-colors"
                       >
                         <Shield className="w-4 h-4 text-[#EB0029]" />
-                        <span>Admin CMS Dashboard</span>
+                        <span>Admin Console</span>
                       </Link>
 
                       <Link
@@ -518,6 +575,15 @@ export default function Navigation({
                       >
                         <Bookmark className="w-4 h-4 text-[#8E8E93]" />
                         <span>My Watchlist</span>
+                      </Link>
+
+                      <Link
+                        href="/dashboard#settings"
+                        onClick={() => setIsProfileOpen(false)}
+                        className="flex items-center space-x-2.5 px-3 py-2 rounded-xl hover:bg-white/10 text-white/90 hover:text-white transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-[#8E8E93]" />
+                        <span>Account Settings</span>
                       </Link>
                     </div>
                   )}
@@ -561,7 +627,7 @@ export default function Navigation({
       {/* =========================================================== */}
       {!isMobileMenuOpen && (
         <div className="md:hidden flex items-center space-x-2 px-4 pt-3 overflow-x-auto no-scrollbar text-xs">
-          {NAV_TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const isActive = activeTab === tab;
             return (
               <button
@@ -578,6 +644,14 @@ export default function Navigation({
               </button>
             );
           })}
+
+          <Link
+            href="/pricing"
+            className="flex items-center space-x-1 px-3 py-1 rounded-full whitespace-nowrap text-amber-300 font-bold bg-amber-400/15 border border-amber-400/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
+          >
+            <Crown className="w-3 h-3 fill-amber-400" />
+            <span>VIP Club</span>
+          </Link>
         </div>
       )}
 
@@ -684,7 +758,7 @@ export default function Navigation({
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/40 px-3 mb-1">
               Explore Catalog
             </p>
-            {NAV_TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const isActive = activeTab === tab;
               return (
                 <button
@@ -702,6 +776,18 @@ export default function Navigation({
                 </button>
               );
             })}
+
+            <Link
+              href="/pricing"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-left font-bold text-amber-300 bg-amber-400/10 hover:bg-amber-400/15 border border-amber-400/25 transition-colors mt-1"
+            >
+              <div className="flex items-center space-x-2">
+                <Crown className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <span>VIP Club Membership</span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-amber-400" />
+            </Link>
           </div>
 
           {/* State Specific Quick Links in Mobile Menu */}
@@ -741,16 +827,14 @@ export default function Navigation({
                 </>
               )}
 
-              {isFreeUser && (
-                <Link
-                  href="/dashboard#settings"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 text-white/80 hover:text-white transition-colors"
-                >
-                  <Settings className="w-4 h-4 text-[#8E8E93]" />
-                  <span>Account Settings</span>
-                </Link>
-              )}
+              <Link
+                href="/dashboard#settings"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 text-white/80 hover:text-white transition-colors"
+              >
+                <Settings className="w-4 h-4 text-[#8E8E93]" />
+                <span>Account Settings</span>
+              </Link>
 
               {isAdminUser && (
                 <>

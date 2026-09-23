@@ -7,9 +7,10 @@ import { parseVideoSource } from "@/lib/video";
 import { getPosterCardUrl } from "@/lib/cloudinary";
 import { LensImpactLogo } from "@/components/OnePlusLogo";
 import StreamPulseFooter from "@/components/StreamPulseFooter";
-import AccessGate from "@/components/AccessGate";
-import WatchlistButton from "@/components/WatchlistButton";
+import AccessGate from "@/components/auth/AccessGate";
+import WatchlistButton from "@/components/watchlist/WatchlistButton";
 import DiscussionForum from "@/components/comments/DiscussionForum";
+import BackToCatalogButton from "@/components/BackToCatalogButton";
 import {
   Star,
   Play,
@@ -52,14 +53,8 @@ export default async function MovieDetailPage({ params }: MoviePageProps) {
     <div className="min-h-screen bg-[#07080B] text-white flex flex-col select-none">
       {/* Top Header */}
       <header className="sticky top-0 z-50 bg-[#07080B]/90 backdrop-blur-xl border-b border-white/5 py-4 px-4 sm:px-8 md:px-12 lg:px-16 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link
-            href="/"
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-colors flex items-center space-x-1.5 text-xs font-semibold"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Catalog</span>
-          </Link>
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <BackToCatalogButton />
           <LensImpactLogo size="md" />
         </div>
         <Link

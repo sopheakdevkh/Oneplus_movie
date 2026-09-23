@@ -56,7 +56,12 @@ export async function getAdminStats() {
 export async function createMovieAction(data: {
   title: string;
   slug?: string;
+  director?: string;
+  category?: string;
   description: string;
+  publicSynopsis?: string;
+  premiumBreakdown?: string;
+  youtubeVideoId?: string;
   releaseYear: number;
   duration: number;
   rating: number;
@@ -88,11 +93,38 @@ export async function createMovieAction(data: {
       genreConnect.push({ id: genre.id });
     }
 
+    // If a category slug is provided, ensure it also exists as a genre
+    if (data.category) {
+      const catSlug = data.category;
+      // Map category slugs to display names
+      const categoryNames: Record<string, string> = {
+        "mindset-growth": "Mindset & Personal Growth",
+        "leadership-resilience": "Leadership & Resilience",
+        "social-impact": "Social Impact & Society",
+        "philosophical-cinema": "Deep Philosophical Cinema",
+        "award-shorts": "Award-Winning Short Films",
+      };
+      const catName =
+        categoryNames[catSlug] ||
+        catSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const catGenre = await prisma.genre.upsert({
+        where: { slug: catSlug },
+        update: {},
+        create: { name: catName, slug: catSlug },
+      });
+      if (!genreConnect.some((g) => g.id === catGenre.id)) {
+        genreConnect.push({ id: catGenre.id });
+      }
+    }
+
     const movie = await prisma.movie.create({
       data: {
         title: data.title,
         slug: `${slug}-${Date.now().toString().slice(-4)}`,
         description: data.description,
+        publicSynopsis: data.publicSynopsis || null,
+        premiumBreakdown: data.premiumBreakdown || null,
+        youtubeVideoId: data.youtubeVideoId || null,
         releaseYear: Number(data.releaseYear) || 2024,
         duration: Number(data.duration) || 120,
         rating: Number(data.rating) || 8.0,
@@ -129,7 +161,12 @@ export async function updateMovieAction(
   id: string,
   data: {
     title: string;
+    director?: string;
+    category?: string;
     description: string;
+    publicSynopsis?: string;
+    premiumBreakdown?: string;
+    youtubeVideoId?: string;
     releaseYear: number;
     duration: number;
     rating: number;
@@ -154,11 +191,37 @@ export async function updateMovieAction(
       genreConnect.push({ id: genre.id });
     }
 
+    // If a category slug is provided, ensure it also exists as a genre
+    if (data.category) {
+      const catSlug = data.category;
+      const categoryNames: Record<string, string> = {
+        "mindset-growth": "Mindset & Personal Growth",
+        "leadership-resilience": "Leadership & Resilience",
+        "social-impact": "Social Impact & Society",
+        "philosophical-cinema": "Deep Philosophical Cinema",
+        "award-shorts": "Award-Winning Short Films",
+      };
+      const catName =
+        categoryNames[catSlug] ||
+        catSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const catGenre = await prisma.genre.upsert({
+        where: { slug: catSlug },
+        update: {},
+        create: { name: catName, slug: catSlug },
+      });
+      if (!genreConnect.some((g) => g.id === catGenre.id)) {
+        genreConnect.push({ id: catGenre.id });
+      }
+    }
+
     const movie = await prisma.movie.update({
       where: { id },
       data: {
         title: data.title,
         description: data.description,
+        publicSynopsis: data.publicSynopsis || null,
+        premiumBreakdown: data.premiumBreakdown || null,
+        youtubeVideoId: data.youtubeVideoId || null,
         releaseYear: Number(data.releaseYear),
         duration: Number(data.duration),
         rating: Number(data.rating),

@@ -13,6 +13,7 @@ import {
   Download,
   Film,
   ArrowRight,
+  ArrowLeft,
   ChevronDown,
   ChevronUp,
   CreditCard,
@@ -20,11 +21,15 @@ import {
   HeartHandshake,
   Loader2,
   CheckCircle2,
+  Crown,
 } from "lucide-react";
 import { LensImpactLogo } from "@/components/OnePlusLogo";
 import StreamPulseFooter from "@/components/StreamPulseFooter";
+import BackToCatalogButton from "@/components/BackToCatalogButton";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PricingClient() {
+  const { user, isAuthenticated, isMember, isAdmin, openAuthModal } = useAuth();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutStatus, setCheckoutStatus] = useState<{
@@ -36,6 +41,19 @@ export default function PricingClient() {
   const isYearly = billingCycle === "yearly";
 
   const handleCheckout = async () => {
+    // If guest, prompt login/signup first, then continue to Stripe checkout
+    if (!isAuthenticated) {
+      openAuthModal({
+        title: "Sign in to Subscribe",
+        subtitle: `Create a free account or sign in to activate your ${isYearly ? "Annual" : "Monthly"} VIP membership.`,
+        defaultTab: "signup",
+        onSuccess: () => {
+          handleCheckout();
+        },
+      });
+      return;
+    }
+
     setIsLoading(true);
     setCheckoutStatus({ type: null, message: "" });
 
@@ -115,12 +133,7 @@ export default function PricingClient() {
           </div>
 
           <div className="flex items-center space-x-3">
-            <Link
-              href="/"
-              className="text-xs font-semibold text-white/70 hover:text-white transition-colors"
-            >
-              Catalog
-            </Link>
+            <BackToCatalogButton />
           </div>
         </div>
       </header>
@@ -269,14 +282,26 @@ export default function PricingClient() {
 
             {/* Button */}
             <div className="pt-8">
-              <button
-                type="button"
-                disabled
-                className="w-full py-3.5 px-6 rounded-2xl bg-white/5 hover:bg-white/10 text-white/70 border border-white/10 text-xs sm:text-sm font-bold tracking-wide transition-all cursor-default text-center flex items-center justify-center space-x-2"
-              >
-                <span>Current Plan</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              </button>
+              {!isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => openAuthModal({ defaultTab: "signup" })}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/15 text-xs sm:text-sm font-bold tracking-wide transition-all cursor-pointer text-center flex items-center justify-center space-x-2"
+                >
+                  <span>Start Free (No Card Needed)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : isMember || isAdmin ? (
+                <div className="w-full py-3.5 px-6 rounded-2xl bg-white/5 text-white/50 border border-white/5 text-xs sm:text-sm font-semibold tracking-wide text-center flex items-center justify-center space-x-2">
+                  <Check className="w-4 h-4 text-white/40" />
+                  <span>Included with Membership</span>
+                </div>
+              ) : (
+                <div className="w-full py-3.5 px-6 rounded-2xl bg-white/10 text-white/80 border border-white/15 text-xs sm:text-sm font-bold tracking-wide text-center flex items-center justify-center space-x-2">
+                  <span>Current Plan</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                </div>
+              )}
             </div>
           </div>
 
@@ -380,33 +405,65 @@ export default function PricingClient() {
 
             {/* CTA Button with Checkout Trigger */}
             <div className="pt-8 space-y-2.5">
-              <button
-                type="button"
-                onClick={handleCheckout}
-                disabled={isLoading}
-                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#FF5500] to-[#EB0029] hover:from-[#ff6b1a] hover:to-[#ff1a40] text-white text-sm font-extrabold tracking-wide transition-all duration-200 shadow-[0_0_25px_rgba(255,85,0,0.45)] hover:shadow-[0_0_35px_rgba(255,85,0,0.6)] active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Processing Secure Checkout...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Upgrade to Premium</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </>
-                )}
-              </button>
+              {isMember ? (
+                <div className="space-y-3">
+                  <div className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs sm:text-sm font-black text-center flex items-center justify-center space-x-2 shadow-[0_0_25px_rgba(16,185,129,0.15)]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>Current Active Plan • VIP Member</span>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    className="w-full py-3 px-6 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold text-center flex items-center justify-center space-x-2 transition-all border border-white/10"
+                  >
+                    <span>Go to VIP Dashboard &amp; Library</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              ) : isAdmin ? (
+                <div className="space-y-3">
+                  <div className="w-full py-3.5 px-6 rounded-2xl bg-[#EB0029]/15 border border-[#EB0029]/40 text-[#EB0029] text-xs sm:text-sm font-black text-center flex items-center justify-center space-x-2">
+                    <Shield className="w-4 h-4 text-[#EB0029]" />
+                    <span>Admin Superuser • All Unlocked</span>
+                  </div>
+                  <Link
+                    href="/admin"
+                    className="w-full py-3 px-6 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold text-center flex items-center justify-center space-x-2 transition-all border border-white/10"
+                  >
+                    <span>Open Admin CMS</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleCheckout}
+                    disabled={isLoading}
+                    className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#FF5500] to-[#EB0029] hover:from-[#ff6b1a] hover:to-[#ff1a40] text-white text-sm font-extrabold tracking-wide transition-all duration-200 shadow-[0_0_25px_rgba(255,85,0,0.45)] hover:shadow-[0_0_35px_rgba(255,85,0,0.6)] active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Processing Secure Checkout...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Upgrade to VIP</span>
+                        <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                      </>
+                    )}
+                  </button>
 
-              <div className="flex items-center justify-center space-x-4 text-[11px] text-white/50 pt-1">
-                <span className="flex items-center space-x-1">
-                  <Lock className="w-3 h-3 text-emerald-400" />
-                  <span>256-bit SSL encrypted</span>
-                </span>
-                <span>•</span>
-                <span>Cancel anytime</span>
-              </div>
+                  <div className="flex items-center justify-center space-x-4 text-[11px] text-white/50 pt-1">
+                    <span className="flex items-center space-x-1">
+                      <Lock className="w-3 h-3 text-emerald-400" />
+                      <span>256-bit SSL encrypted</span>
+                    </span>
+                    <span>•</span>
+                    <span>Cancel anytime</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

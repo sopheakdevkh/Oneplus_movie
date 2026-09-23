@@ -17,6 +17,8 @@ export interface UserSession {
   subscriptionStatus?: string;
   subscriptionTier?: string | null;
   subscriptionEndDate?: string | Date | null;
+  created_at?: string | Date | null;
+  createdAt?: string | Date | null;
 }
 
 export interface LoginCredentials {
@@ -70,6 +72,7 @@ function normalizeUser(rawUser: any): UserSession {
   const status = rawUser.subscription_status || rawUser.subscriptionStatus || "free";
   const tier = rawUser.subscription_tier || rawUser.subscriptionTier || null;
   const endDate = rawUser.subscription_end_date || rawUser.subscriptionEndDate || null;
+  const createdAt = rawUser.created_at || rawUser.createdAt || null;
 
   return {
     id: rawUser.id,
@@ -82,6 +85,8 @@ function normalizeUser(rawUser: any): UserSession {
     subscriptionStatus: status,
     subscriptionTier: tier,
     subscriptionEndDate: endDate,
+    created_at: createdAt,
+    createdAt: createdAt,
   };
 }
 

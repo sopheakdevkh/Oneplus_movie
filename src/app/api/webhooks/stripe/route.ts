@@ -22,22 +22,38 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   // 1. Verify raw webhook signature to prevent spoofing
-  try {
-    if (webhookSecret) {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } else {
-      console.warn(
-        "STRIPE_WEBHOOK_SECRET is not set in environment. Parsing event without signature verification (Development only)."
+  const isSecretConfigured =
+    webhookSecret &&
+    webhookSecret !== "whsec_..." &&
+    !webhookSecret.includes("...");
+
+  if (!isSecretConfigured) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("FATAL: STRIPE_WEBHOOK_SECRET is not configured in production.");
+      return NextResponse.json(
+        { error: "Server configuration error: Webhook secret missing." },
+        { status: 500 }
       );
-      event = JSON.parse(body) as Stripe.Event;
     }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown verification error";
-    console.error(`Webhook signature verification failed: ${message}`);
-    return NextResponse.json(
-      { error: `Webhook signature verification failed: ${message}` },
-      { status: 400 }
+    console.warn(
+      "[DEV ONLY] STRIPE_WEBHOOK_SECRET is unset. Parsing event without signature verification for local testing only."
     );
+    try {
+      event = JSON.parse(body) as Stripe.Event;
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
+  } else {
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown verification error";
+      console.error(`Webhook signature verification failed: ${message}`);
+      return NextResponse.json(
+        { error: `Webhook signature verification failed: ${message}` },
+        { status: 400 }
+      );
+    }
   }
 
   // 2. Process relevant Stripe billing lifecycle events

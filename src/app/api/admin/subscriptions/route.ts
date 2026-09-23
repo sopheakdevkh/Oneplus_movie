@@ -2,60 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth-middleware";
 import prisma from "@/lib/db";
 
-// Fallback initial dataset for demonstration when database is in fresh/unseeded state
-const FALLBACK_USERS = [
-  {
-    id: "usr_sarah_jenkins",
-    name: "Sarah Jenkins",
-    email: "sarah@lensimpact.com",
-    role: "USER",
-    subscriptionStatus: "free",
-    subscriptionTier: null,
-    subscriptionEndDate: null,
-    createdAt: new Date("2026-01-15T10:00:00Z"),
-  },
-  {
-    id: "usr_elena_vance",
-    name: "Dr. Elena Vance",
-    email: "elena.vance@psychfilminstitute.edu",
-    role: "USER",
-    subscriptionStatus: "active",
-    subscriptionTier: "annual",
-    subscriptionEndDate: new Date("2027-02-14T00:00:00Z"),
-    createdAt: new Date("2025-11-20T08:30:00Z"),
-  },
-  {
-    id: "usr_marcus_thorne",
-    name: "Marcus Thorne",
-    email: "marcus.thorne@cinema-lens.org",
-    role: "USER",
-    subscriptionStatus: "active",
-    subscriptionTier: "monthly",
-    subscriptionEndDate: new Date("2026-10-31T23:59:59Z"),
-    createdAt: new Date("2026-02-01T14:15:00Z"),
-  },
-  {
-    id: "usr_alex_rivera",
-    name: "Alex Rivera",
-    email: "alex.rivera@gmail.com",
-    role: "USER",
-    subscriptionStatus: "free",
-    subscriptionTier: null,
-    subscriptionEndDate: null,
-    createdAt: new Date("2026-03-02T11:45:00Z"),
-  },
-  {
-    id: "usr_admin_sopheak",
-    name: "Admin Sopheak",
-    email: "admin@lensimpact.com",
-    role: "ADMIN",
-    subscriptionStatus: "active",
-    subscriptionTier: "staff_vip",
-    subscriptionEndDate: null, // Lifetime admin
-    createdAt: new Date("2025-08-01T00:00:00Z"),
-  },
-];
-
 /**
  * GET /api/admin/subscriptions
  * Fetches all registered users, roles, and subscription statuses.
@@ -84,27 +30,17 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    if (users.length > 0) {
-      return NextResponse.json({
-        users,
-        total: users.length,
-        adminUser: authCheck.user.email,
-      });
-    }
-
-    // Return fallback sample users if database has no registered accounts yet
     return NextResponse.json({
-      users: FALLBACK_USERS,
-      total: FALLBACK_USERS.length,
+      users,
+      total: users.length,
       adminUser: authCheck.user.email,
     });
   } catch (error) {
-    console.warn("Database user query fallback to demo list:", error);
-    return NextResponse.json({
-      users: FALLBACK_USERS,
-      total: FALLBACK_USERS.length,
-      adminUser: authCheck.user.email,
-    });
+    console.error("Database user query failed in admin subscriptions:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch subscriptions from database." },
+      { status: 500 }
+    );
   }
 }
 
@@ -178,18 +114,10 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (dbError) {
-      console.warn("Database user update bypassed for mock profile:", dbError);
-      // Construct updated mock response
-      updatedUser = {
-        id: userId || `usr_${Date.now()}`,
-        name: "User Profile",
-        email: email || "user@example.com",
-        role: "USER",
-        subscriptionStatus,
-        subscriptionTier: tierToPersist,
-        subscriptionEndDate: calculatedEndDate,
-        updatedAt: new Date(),
-      };
+      return NextResponse.json(
+        { error: "User account not found or could not be updated in database." },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({

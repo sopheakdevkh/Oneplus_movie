@@ -61,20 +61,6 @@ export function resolveUserState(user: AuthenticatedUserPayload | null | undefin
   return "free_user";
 }
 
-/**
- * Checks whether a user can access premium gated content (Paid Members and Admins).
- */
-export function canAccessPremiumContent(user: AuthenticatedUserPayload | null | undefined): boolean {
-  const state = resolveUserState(user);
-  return state === "paid_member" || state === "admin";
-}
-
-/**
- * Checks whether a user can access the Admin portal.
- */
-export function canAccessAdmin(user: AuthenticatedUserPayload | null | undefined): boolean {
-  return resolveUserState(user) === "admin";
-}
 
 /**
  * Checks whether a user's subscription is currently active and within its valid date range.

@@ -70,7 +70,7 @@ export function LensImpactLogo({
           <span className={`font-black ${dimensions.text} tracking-wider text-white group-hover:text-white/95 transition-colors`}>
             LENS<span className="text-[#EB0029]">IMPACT</span>
           </span>
-          <span className={`font-bold ${dimensions.badge} tracking-widest text-[#EB0029] uppercase bg-[#EB0029]/15 rounded border border-[#EB0029]/30 shadow-xs whitespace-nowrap`}>
+          <span className={`font-bold ${dimensions.badge} tracking-widest text-[#EB0029] uppercase bg-[#EB0029]/15 rounded border border-[#EB0029]/30 shadow-xs whitespace-nowrap hidden min-[390px]:inline-block`}>
             FILM CLUB
           </span>
         </div>

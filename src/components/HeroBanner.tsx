@@ -6,10 +6,6 @@ import {
   Play,
   Plus,
   Star,
-  Volume2,
-  VolumeX,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { MovieData, FEATURED_SLIDES } from "../lib/movies";
 import { parseVideoSource } from "../lib/video";
@@ -26,7 +22,7 @@ export default function HeroBanner({
   onMoreInfo,
 }: HeroBannerProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
+  const isMuted = true;
   const [isPaused, setIsPaused] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -62,13 +58,6 @@ export default function HeroBanner({
     setVideoReady(false);
   }, [slides.length]);
 
-  // Go to previous slide
-  const handlePrevSlide = useCallback(() => {
-    if (slides.length <= 1) return;
-    setCurrentSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
-    setProgress(0);
-    setVideoReady(false);
-  }, [slides.length]);
 
   // Jump to specific slide
   const handleSelectSlide = (index: number) => {
@@ -264,7 +253,7 @@ export default function HeroBanner({
         {/* Bottom Interactive Bar: Carousel Indicators & Clean Audio Control */}
         <div className="flex items-center justify-between pt-8 sm:pt-14 w-full max-w-7xl">
           {/* Carousel Slide Indicators with Progress Fill */}
-          {slides.length > 1 ? (
+          {slides.length > 1 && (
             <div className="flex items-center space-x-2">
               {slides.map((s, idx) => {
                 const isActive = idx === currentSlideIndex;
@@ -289,48 +278,7 @@ export default function HeroBanner({
                 );
               })}
             </div>
-          ) : (
-            <div />
           )}
-
-          {/* Quick Audio & Slide Controls */}
-          <div className="flex items-center space-x-2">
-            {/* Prev / Next Slide Arrows (Desktop only) */}
-            {slides.length > 1 && (
-              <div className="hidden sm:flex items-center space-x-1 mr-1.5 opacity-80 hover:opacity-100 transition-opacity">
-                <button
-                  onClick={handlePrevSlide}
-                  className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95"
-                  aria-label="Previous Preview"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleNextSlide}
-                  className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/70 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95"
-                  aria-label="Next Preview"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            {/* Audio Mute / Unmute Button */}
-            {videoSource && (
-              <button
-                onClick={() => setIsMuted((prev) => !prev)}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/80 border border-white/15 backdrop-blur-md flex items-center justify-center text-white/90 hover:text-white transition-all shadow-lg active:scale-95"
-                title={isMuted ? "Unmute movie audio" : "Mute movie audio"}
-                aria-label={isMuted ? "Unmute" : "Mute"}
-              >
-                {isMuted ? (
-                  <VolumeX className="w-4 h-4 text-white/70" />
-                ) : (
-                  <Volume2 className="w-4 h-4 text-[#FF5500]" />
-                )}
-              </button>
-            )}
-          </div>
         </div>
       </div>
     </div>

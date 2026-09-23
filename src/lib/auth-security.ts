@@ -4,11 +4,23 @@ import { SignJWT, jwtVerify } from "jose";
 
 // --- Secret & Config ---
 const BCRYPT_SALT_ROUNDS = 12;
-const JWT_SECRET_KEY = new TextEncoder().encode(
-  process.env.AUTH_SECRET ||
-    process.env.JWT_SECRET ||
-    "lensimpact_secure_jwt_secret_key_minimum_32_chars_2026"
-);
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.AUTH_SECRET || process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "FATAL: AUTH_SECRET or JWT_SECRET environment variable must be set in production."
+      );
+    }
+    console.warn(
+      "[SECURITY WARNING] AUTH_SECRET / JWT_SECRET is not configured in environment. Using development fallback. DO NOT deploy without setting a cryptographically random secret."
+    );
+    return new TextEncoder().encode("lensimpact_dev_fallback_secret_must_be_overridden_in_prod");
+  }
+  return new TextEncoder().encode(secret);
+}
+
+const JWT_SECRET_KEY = getJwtSecret();
 export const AUTH_COOKIE_NAME = "lensimpact_auth_token";
 const TOKEN_EXPIRATION = "7d"; // 7 days
 

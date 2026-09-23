@@ -2,8 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { OnePlusSignSvg } from "@/components/OnePlusLogo";
+import { useAuth } from "@/context/AuthContext";
 import {
   LayoutDashboard,
   Film,
@@ -14,6 +15,9 @@ import {
   Users,
   Sparkles,
   MonitorPlay,
+  Sliders,
+  UserCheck,
+  LogOut,
 } from "lucide-react";
 
 const ADMIN_LINKS = [
@@ -22,13 +26,25 @@ const ADMIN_LINKS = [
   { href: "/admin/subscriptions", label: "Subscriptions & Users", icon: Users },
   { href: "/admin/content", label: "Film CMS (Split Access)", icon: Sparkles },
   { href: "/admin/movies", label: "Movies Catalog", icon: Film },
-  { href: "/admin/genres", label: "Genres", icon: Tags },
+  { href: "/admin/cast", label: "Cast & Crew", icon: UserCheck },
+  { href: "/admin/categories", label: "Category Rules & Limits", icon: Sliders },
+  { href: "/admin/genres", label: "Genre Tags", icon: Tags },
   { href: "/admin/media", label: "Cloudinary Assets", icon: Cloud },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const handleAdminLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {}
+    await logout();
+    router.push("/admin/login");
+  };
 
   return (
     <>
@@ -87,6 +103,24 @@ export default function AdminSidebar() {
               </Link>
             );
           })}
+
+          <div className="pt-3 border-t border-white/10 flex items-center space-x-2">
+            <Link
+              href="/"
+              onClick={() => setMobileOpen(false)}
+              className="flex-1 flex items-center justify-center space-x-2 py-2 rounded-xl text-xs font-semibold text-white/70 bg-white/5 border border-white/5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Exit App</span>
+            </Link>
+            <button
+              onClick={handleAdminLogout}
+              className="flex-1 flex items-center justify-center space-x-2 py-2 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -134,15 +168,23 @@ export default function AdminSidebar() {
           </nav>
         </div>
 
-        {/* Bottom: Return to Main Stream Platform */}
-        <div className="pt-6 border-t border-white/10">
+        {/* Bottom Actions: Return & Sign Out */}
+        <div className="pt-6 border-t border-white/10 space-y-2">
           <Link
             href="/"
-            className="flex items-center space-x-2.5 px-4 py-3 rounded-xl text-xs font-semibold text-[#8E8E93] hover:text-white bg-white/5 hover:bg-white/10 transition-all border border-white/5"
+            className="flex items-center space-x-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#8E8E93] hover:text-white bg-white/5 hover:bg-white/10 transition-all border border-white/5"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Exit to Streaming App</span>
           </Link>
+
+          <button
+            onClick={handleAdminLogout}
+            className="w-full flex items-center space-x-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-rose-400/80 hover:text-rose-400 bg-rose-500/5 hover:bg-rose-500/10 transition-all border border-rose-500/10 active:scale-98"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sign Out Admin</span>
+          </button>
         </div>
       </aside>
     </>
