@@ -148,9 +148,9 @@ export function AuthProvider({
 
   // Determine user state tier (admin, paid_member, free_user, or guest)
   const computeState = (): UserState => {
-    if (simulatedState) return simulatedState;
+    if (user && user.role?.toLowerCase() === "admin") return "admin";
+    if (simulatedState && simulatedState !== "admin") return simulatedState;
     if (!user || !user.id) return "guest";
-    if (user.role === "admin") return "admin";
 
     const isSubActive =
       user.subscription_status === "active" &&
@@ -164,7 +164,7 @@ export function AuthProvider({
   const userState = computeState();
   const isAuthenticated = Boolean(user && user.id) || (userState !== "guest");
   const isMember = userState === "paid_member" || userState === "admin";
-  const isAdmin = userState === "admin";
+  const isAdmin = Boolean(user && user.role?.toLowerCase() === "admin");
 
   // 2. login: Calls /api/auth/login, sets state, and redirects
   const login = async (
@@ -329,15 +329,6 @@ export function AuthProvider({
         subscription_tier: "monthly",
         subscriptionStatus: "active",
         subscriptionTier: "monthly",
-      });
-    } else if (newState === "admin") {
-      setUser({
-        id: "usr_admin_demo",
-        name: "Admin Sopheak",
-        email: "admin@lensimpact.com",
-        role: "admin",
-        subscription_status: "active",
-        subscriptionStatus: "active",
       });
     }
   };

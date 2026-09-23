@@ -172,7 +172,7 @@ export default function DiscussionForum({
           Viewing comments as:
         </span>
         <div className="flex items-center gap-1.5">
-          {(["guest", "free_user", "paid_member", "admin"] as UserState[]).map((state) => (
+          {(["guest", "free_user", "paid_member"] as UserState[]).map((state) => (
             <button
               key={state}
               type="button"
@@ -187,9 +187,7 @@ export default function DiscussionForum({
                 ? "Guest"
                 : state === "free_user"
                 ? "Free User"
-                : state === "paid_member"
-                ? "Club Member"
-                : "Admin"}
+                : "Club Member"}
             </button>
           ))}
         </div>

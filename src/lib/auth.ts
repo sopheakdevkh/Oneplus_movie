@@ -45,47 +45,6 @@ export async function getAuthenticatedUser(
       }
     }
 
-    // 2. Check custom user header (e.g. from upstream auth gateway / proxy)
-    const headerUserId = request.headers.get("x-user-id");
-    if (headerUserId) {
-      const user = await prisma.user.findUnique({
-        where: { id: headerUserId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          customerId: true,
-          subscriptionStatus: true,
-          subscriptionTier: true,
-          subscriptionEndDate: true,
-        },
-      });
-      if (user) return user;
-    }
-
-    // 2. Check Authorization Bearer token (JWT or User ID)
-    const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7).trim();
-      const user = await prisma.user.findFirst({
-        where: {
-          OR: [{ id: token }, { email: token }],
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          customerId: true,
-          subscriptionStatus: true,
-          subscriptionTier: true,
-          subscriptionEndDate: true,
-        },
-      });
-      if (user) return user;
-    }
-
     // No valid authenticated session found -> real unauthenticated guest
     return null;
   } catch (error) {

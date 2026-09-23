@@ -9,17 +9,15 @@ import {
   getClientIp,
 } from "@/lib/auth-security";
 
-const DEFAULT_ADMIN_EMAIL = "admin@lensimpact.com";
-const DEFAULT_ADMIN_PASS = "admin123";
-
 /**
  * POST /api/admin/login
  * 
  * High-security administrative authentication endpoint.
  * - Rate-limited to prevent brute-forcing.
- * - Verifies administrator role and credentials.
- * - Upserts Admin record in Prisma to keep session synchronized.
- * - Issues signed JWT with role: "admin" in secure HTTP-Only cookie.
+ * - Requires explicit administrator credentials (email + password).
+ * - Verifies against database Admin records (role === 'ADMIN') with bcrypt password hash.
+ * - Supports configured ADMIN_EMAIL & ADMIN_PASSWORD environment variables.
+ * - Issues cryptographically signed JWT with role: "admin" in secure HTTP-Only cookie.
  */
 export const dynamic = "force-dynamic";
 
@@ -45,45 +43,79 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { email, password, isQuickAccess } = body;
+    const { email, password } = body;
 
-    const cleanEmail = (email || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+    // Strict input verification
+    if (!email || typeof email !== "string" || !password || typeof password !== "string") {
+      return NextResponse.json(
+        {
+          error: "Invalid Credentials",
+          message: "Both administrator email and password are required.",
+        },
+        { status: 400 }
+      );
+    }
 
-    // 2. Quick Demo Admin Access bypass or password check
+    const cleanEmail = email.trim().toLowerCase();
     let isAuthorized = false;
+    let adminUserId = "usr_admin_master";
+    let adminUserName = "System Administrator";
 
-    if (isQuickAccess) {
-      isAuthorized = true;
-    } else {
-      if (!password || typeof password !== "string") {
-        return NextResponse.json(
-          {
-            error: "Invalid Credentials",
-            message: "Administrative passphrase or security key is required.",
-          },
-          { status: 400 }
-        );
+    // 2. Priority 1: Check database for user with ADMIN role and verified password hash
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: cleanEmail },
+      });
+
+      if (dbUser && dbUser.role?.toUpperCase() === "ADMIN" && dbUser.passwordHash) {
+        const matches = await verifyPassword(password, dbUser.passwordHash);
+        if (matches) {
+          isAuthorized = true;
+          adminUserId = dbUser.id;
+          adminUserName = dbUser.name || "System Administrator";
+        }
       }
+    } catch (dbErr) {
+      console.warn("Database error during admin authentication check:", dbErr);
+    }
 
-      // Check default fallback password
-      if (
-        cleanEmail === DEFAULT_ADMIN_EMAIL &&
-        (password === DEFAULT_ADMIN_PASS || password === "admin" || password === "admin2026")
-      ) {
+    // 3. Priority 2: Check server-side configured ADMIN_EMAIL & ADMIN_PASSWORD environment variables
+    const envAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const envAdminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!isAuthorized && envAdminEmail && envAdminPassword) {
+      if (cleanEmail === envAdminEmail && password === envAdminPassword) {
         isAuthorized = true;
-      } else {
-        // Query database for admin user
+        // Securely sync or create the admin in DB using bcrypt hash of their actual configured password
         try {
-          const dbUser = await prisma.user.findUnique({
+          const hashedPassword = await hashPassword(password);
+          const upserted = await prisma.user.upsert({
             where: { email: cleanEmail },
+            update: {
+              role: "ADMIN",
+              passwordHash: hashedPassword,
+              subscriptionStatus: "active",
+              subscriptionTier: "admin_vip",
+            },
+            create: {
+              email: cleanEmail,
+              name: "System Administrator",
+              role: "ADMIN",
+              passwordHash: hashedPassword,
+              subscriptionStatus: "active",
+              subscriptionTier: "admin_vip",
+            },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true,
+            },
           });
-
-          if (dbUser && dbUser.role === "ADMIN" && dbUser.passwordHash) {
-            const matches = await verifyPassword(password, dbUser.passwordHash);
-            if (matches) isAuthorized = true;
-          }
+          adminUserId = upserted.id;
+          adminUserName = upserted.name || adminUserName;
         } catch (dbErr) {
-          console.warn("DB check error in admin login:", dbErr);
+          console.warn("Could not sync env admin account to database:", dbErr);
         }
       }
     }
@@ -96,41 +128,6 @@ export async function POST(request: NextRequest) {
         },
         { status: 401 }
       );
-    }
-
-    // 3. Upsert admin record in database to ensure full database synchronization
-    let adminUserId = "usr_admin_master";
-    let adminUserName = "System Administrator";
-
-    try {
-      const hashedPassword = await hashPassword(DEFAULT_ADMIN_PASS);
-      const upserted = await prisma.user.upsert({
-        where: { email: cleanEmail },
-        update: {
-          role: "ADMIN",
-          subscriptionStatus: "active",
-          subscriptionTier: "admin_vip",
-        },
-        create: {
-          email: cleanEmail,
-          name: "System Administrator",
-          role: "ADMIN",
-          passwordHash: hashedPassword,
-          subscriptionStatus: "active",
-          subscriptionTier: "admin_vip",
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-        },
-      });
-
-      adminUserId = upserted.id;
-      adminUserName = upserted.name || adminUserName;
-    } catch (dbErr) {
-      console.warn("Could not upsert admin user to database (running in mock/fallback mode):", dbErr);
     }
 
     // 4. Issue signed admin JWT token

@@ -17,7 +17,7 @@ export default function AdminAuthGuard({ children }: { children: React.ReactNode
   const isLoginPage = pathname === "/admin/login";
 
   const isUserAdmin = Boolean(
-    isAdmin || user?.role === "admin" || userState === "admin"
+    isAdmin || (user && user.role?.toLowerCase() === "admin")
   );
 
   useEffect(() => {

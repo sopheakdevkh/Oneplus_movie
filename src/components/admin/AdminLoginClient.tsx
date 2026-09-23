@@ -13,7 +13,6 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
   ArrowLeft,
   KeyRound,
   Terminal,
@@ -26,10 +25,10 @@ export default function AdminLoginClient() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/admin";
 
-  const { user, isAdmin, setUserState, setUser, checkAuth } = useAuth();
+  const { user, isAdmin, setUser, checkAuth } = useAuth();
 
-  const [email, setEmail] = useState("admin@lensimpact.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -42,8 +41,12 @@ export default function AdminLoginClient() {
     }
   }, [isAdmin, redirectUrl, router]);
 
-  const handleAdminLogin = async (e?: React.FormEvent, isQuickAccess: boolean = false) => {
+  const handleAdminLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!email.trim() || !password) {
+      setErrorMsg("Please enter both administrator email and passphrase.");
+      return;
+    }
     setIsLoading(true);
     setErrorMsg("");
     setSuccessMsg("");
@@ -53,9 +56,8 @@ export default function AdminLoginClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: isQuickAccess ? "admin@lensimpact.com" : email,
-          password: isQuickAccess ? "admin123" : password,
-          isQuickAccess,
+          email: email.trim(),
+          password,
         }),
       });
 
@@ -67,11 +69,10 @@ export default function AdminLoginClient() {
 
       setSuccessMsg("Security verification passed. Unlocking Admin Console...");
 
-      // Update client-side auth context immediately
+      // Update client-side auth context immediately with verified user
       if (data.user) {
         setUser(data.user);
       }
-      setUserState("admin");
 
       // Verify fresh session in background
       checkAuth().catch(() => {});
@@ -155,19 +156,19 @@ export default function AdminLoginClient() {
           )}
 
           {/* Form */}
-          <form onSubmit={(e) => handleAdminLogin(e, false)} className="space-y-4">
+          <form onSubmit={handleAdminLogin} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider flex items-center justify-between">
                 <span>Administrator Email</span>
-                <span className="text-[10px] text-[#00F0FF] lowercase font-mono">system.root</span>
+                <span className="text-[10px] text-[#EB0029] lowercase font-mono">secure.auth</span>
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
                 <input
                   type="email"
                   required
-                  placeholder="admin@lensimpact.com"
+                  placeholder="admin@yourdomain.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-xs sm:text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#EB0029] focus:ring-1 focus:ring-[#EB0029] transition-all"
@@ -186,7 +187,7 @@ export default function AdminLoginClient() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="Enter admin password..."
+                  placeholder="Enter administrator password..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-black/50 border border-white/10 text-xs sm:text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#EB0029] focus:ring-1 focus:ring-[#EB0029] transition-all"
@@ -221,23 +222,6 @@ export default function AdminLoginClient() {
               )}
             </button>
           </form>
-
-          {/* Quick One-Click Dev / Demo Access */}
-          <div className="pt-2 border-t border-white/10 space-y-2">
-            <div className="flex items-center justify-between text-[11px] text-white/40">
-              <span>Quick Development Access:</span>
-              <span className="font-mono text-emerald-400">Ready</span>
-            </div>
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={() => handleAdminLogin(undefined, true)}
-              className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-xs font-bold flex items-center justify-center space-x-2 transition-all active:scale-98"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A]" />
-              <span>⚡ 1-Click Superuser Instant Access</span>
-            </button>
-          </div>
 
           {/* Security Spec Badges */}
           <div className="pt-2 flex items-center justify-center space-x-4 text-[10px] text-white/40 font-mono">
