@@ -18,6 +18,8 @@ import {
  * - Verifies bcrypt password hash
  * - Issues signed JWT in secure HTTP-Only cookie + response body
  */
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   // 1. Rate Limiting (5 attempts / min)
   const clientIp = getClientIp(request);

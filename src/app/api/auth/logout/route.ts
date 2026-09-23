@@ -6,6 +6,8 @@ import { clearAuthCookie } from "@/lib/auth-security";
  * 
  * Clears the session and invalidates the secure HTTP-Only cookie.
  */
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   const response = NextResponse.json(
     {

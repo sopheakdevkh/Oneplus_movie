@@ -21,6 +21,8 @@ const DEFAULT_ADMIN_PASS = "admin123";
  * - Upserts Admin record in Prisma to keep session synchronized.
  * - Issues signed JWT with role: "admin" in secure HTTP-Only cookie.
  */
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   // 1. Rate limiting (10 attempts / min per IP)
   const clientIp = getClientIp(request);

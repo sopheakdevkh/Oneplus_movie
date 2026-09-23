@@ -20,6 +20,8 @@ import {
  * - Initial state: role='USER', subscription_status='free'
  * - Session: Secure HTTP-Only cookie + Bearer token
  */
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   // 1. Rate Limiting (5 attempts / min)
   const clientIp = getClientIp(request);

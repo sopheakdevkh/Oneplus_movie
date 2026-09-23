@@ -8,6 +8,8 @@ import { extractTokenFromRequest, verifyAuthToken, verifyPassword, hashPassword 
  * Verifies current session / token from HTTP-only cookie or Bearer header.
  * Returns current authenticated user: { id, email, role, subscription_status, subscription_end_date }
  */
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     // 1. Extract and verify JWT token

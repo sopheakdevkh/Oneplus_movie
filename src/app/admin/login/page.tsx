@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import AdminLoginClient from "@/components/admin/AdminLoginClient";
 
 export const metadata = {
@@ -7,5 +7,15 @@ export const metadata = {
 };
 
 export default function AdminLoginPage() {
-  return <AdminLoginClient />;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#07090e] flex items-center justify-center text-white/50">
+          <div className="w-8 h-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
+        </div>
+      }
+    >
+      <AdminLoginClient />
+    </Suspense>
+  );
 }
