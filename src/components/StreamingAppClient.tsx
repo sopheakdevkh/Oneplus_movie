@@ -7,24 +7,23 @@ import HeroBanner from "./HeroBanner";
 import ContinueWatchingSection from "./ContinueWatchingSection";
 import StreamPulseFooter from "./StreamPulseFooter";
 import MovieDetailsModal from "./MovieDetailsModal";
-import {
-  MovieData,
-  CONTINUE_WATCHING,
-  FEATURED_SLIDES,
-} from "../lib/movies";
+import { MovieData } from "../lib/movies";
 import Image from "next/image";
 import { Star, Play, Film, Loader2, Lock, Crown, ArrowRight } from "lucide-react";
 import CategoryCatalog from "./CategoryCatalog";
 import { useAuth } from "@/context/AuthContext";
 import { CategoryRulesConfig } from "@/lib/category-rules";
 import { CastDataConfig } from "@/lib/cast";
+import { isMovieAccessibleForRole } from "@/lib/menu-roles";
+import { OnePlusSignSvg } from "./OnePlusLogo";
 
 interface StreamingAppClientProps {
   heroSlides?: MovieData[];
   topRatedMovies: MovieData[];
   actionMovies: MovieData[];
   allMovies: MovieData[];
-  featuredMovie: MovieData;
+  genres?: Array<{ slug: string; name: string }>;
+  featuredMovie?: MovieData | null;
   categoryRulesConfig?: CategoryRulesConfig;
   castConfig?: CastDataConfig;
 }
@@ -34,6 +33,7 @@ export default function StreamingAppClient({
   topRatedMovies,
   actionMovies,
   allMovies,
+  genres,
   featuredMovie,
   categoryRulesConfig,
   castConfig,
@@ -104,22 +104,84 @@ export default function StreamingAppClient({
     };
   }, [allMovies, searchQuery, userState, categoryRulesConfig]);
 
-  // Tab filtering
+  // Movies filtered for the Browse tab respecting admin control and user role
+  const browseMovies = useMemo(() => {
+    return allMovies.filter((m) => {
+      // Exclude admin-only movies from regular non-admin visitors
+      if (m.roleAccess === "admin" && userState !== "admin") {
+        return false;
+      }
+      // If menus explicitly set, check if Browse is enabled
+      if (m.menus && m.menus.length > 0) {
+        return m.menus.includes("Browse");
+      }
+      // Default fallback
+      return true;
+    });
+  }, [allMovies, userState]);
+
+  // Slides for Hero Banner filtered by Browse menu and user role
+  const activeHeroSlides = useMemo(() => {
+    if (heroSlides && heroSlides.length > 0) {
+      const filtered = heroSlides.filter(
+        (m) =>
+          (m.roleAccess !== "admin" || userState === "admin") &&
+          (!m.menus || m.menus.length === 0 || m.menus.includes("Browse"))
+      );
+      if (filtered.length > 0) return filtered;
+    }
+    return browseMovies.slice(0, 5);
+  }, [heroSlides, browseMovies, userState]);
+
+  // Tab filtering based on dynamic menu assignments and role access
   const displayMovies = useMemo(() => {
+    const filterByMenu = (target: "Browse" | "TV Shows" | "Movies" | "New & Popular") => {
+      return allMovies.filter((m) => {
+        // Exclude admin-only movies from regular non-admin visitors
+        if (m.roleAccess === "admin" && userState !== "admin") {
+          return false;
+        }
+
+        // Check if assigned to menu
+        if (m.menus && m.menus.length > 0) {
+          return m.menus.includes(target);
+        }
+
+        // Sensible fallback for untagged items
+        if (target === "Browse") {
+          return true;
+        }
+        if (target === "TV Shows") {
+          return (
+            m.type === "Series" ||
+            m.genres?.some((g) => g.name === "Drama" || g.name === "Thriller")
+          );
+        }
+        if (target === "Movies") {
+          return m.type === "Movie" || !m.type;
+        }
+        if (target === "New & Popular") {
+          return Boolean(m.isTopRated);
+        }
+        return false;
+      });
+    };
+
     if (activeTab === "TV Shows") {
-      return allMovies.filter((m) => m.type === "Series" || m.genres.some((g) => g.name === "Drama" || g.name === "Thriller"));
+      return filterByMenu("TV Shows");
     }
     if (activeTab === "Movies") {
-      return allMovies.filter((m) => m.type === "Movie" || !m.type);
+      return filterByMenu("Movies");
     }
     if (activeTab === "New & Popular") {
-      return topRatedMovies;
+      const popular = filterByMenu("New & Popular");
+      return popular.length > 0 ? popular : topRatedMovies;
     }
     if (activeTab === "My List") {
       return userWatchHistory;
     }
     return null; // Standard Browse view
-  }, [activeTab, allMovies, topRatedMovies, userWatchHistory]);
+  }, [activeTab, allMovies, topRatedMovies, userWatchHistory, userState]);
 
   return (
     <div className="min-h-screen bg-[#0B0B0E] text-white flex flex-col select-none overflow-x-hidden">
@@ -248,6 +310,9 @@ export default function StreamingAppClient({
                   const hours = Math.floor(m.duration / 60);
                   const mins = m.duration % 60;
                   const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                  const isAccessible = isMovieAccessibleForRole(m.roleAccess, userState);
+                  const isVipLocked = m.roleAccess === "vip" && !isAccessible;
+                  const isFreeLocked = m.roleAccess === "free" && !isAccessible;
 
                   return (
                     <div
@@ -255,7 +320,15 @@ export default function StreamingAppClient({
                       onClick={() => setSelectedMovie(m)}
                       className="group cursor-pointer select-none"
                     >
-                      <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#161822] border border-white/10 shadow-lg group-hover:border-[#FF5500]/50 group-hover:scale-[1.03] transition-all duration-300">
+                      <div
+                        className={`relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#161822] border shadow-lg transition-all duration-300 ${
+                          isVipLocked
+                            ? "border-amber-400/40 group-hover:border-amber-400 group-hover:scale-[1.03]"
+                            : isFreeLocked
+                            ? "border-sky-400/40 group-hover:border-sky-400 group-hover:scale-[1.03]"
+                            : "border-white/10 group-hover:border-[#FF5500]/50 group-hover:scale-[1.03]"
+                        }`}
+                      >
                         <Image
                           src={m.posterUrl}
                           alt={m.title}
@@ -263,10 +336,54 @@ export default function StreamingAppClient({
                           unoptimized
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
+
+                        {/* Role Access Badges */}
+                        {isVipLocked ? (
+                          <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-[#FF5500] text-black text-[10px] font-black uppercase tracking-wider flex items-center space-x-1 shadow-lg backdrop-blur-md">
+                            <Crown className="w-3 h-3 fill-black text-black" />
+                            <span>VIP</span>
+                          </div>
+                        ) : isFreeLocked ? (
+                          <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-full bg-sky-500/90 text-white text-[10px] font-black uppercase tracking-wider flex items-center space-x-1.5 shadow-lg backdrop-blur-md">
+                            <div className="w-3 h-3 flex-shrink-0">
+                              <OnePlusSignSvg />
+                            </div>
+                            <span>FREE</span>
+                          </div>
+                        ) : m.roleAccess === "vip" ? (
+                          <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-extrabold uppercase tracking-wider flex items-center space-x-1 backdrop-blur-md">
+                            <Crown className="w-2.5 h-2.5 fill-amber-300" />
+                            <span>VIP</span>
+                          </div>
+                        ) : m.roleAccess === "free" ? (
+                          <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-full bg-sky-500/90 text-white text-[10px] font-black uppercase tracking-wider flex items-center space-x-1.5 shadow-lg backdrop-blur-md">
+                            <div className="w-3 h-3 flex-shrink-0">
+                              <OnePlusSignSvg />
+                            </div>
+                            <span>FREE</span>
+                          </div>
+                        ) : null}
+
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                          <div className="w-11 h-11 rounded-full bg-[#FF5500] text-white flex items-center justify-center shadow-[0_0_20px_rgba(255,85,0,0.6)]">
-                            <Play className="w-5 h-5 fill-white ml-0.5" />
+                          <div
+                            className={`w-11 h-11 rounded-full text-white flex items-center justify-center ${
+                              isVipLocked
+                                ? "bg-gradient-to-r from-amber-500 to-[#FF5500] shadow-[0_0_20px_rgba(245,158,11,0.6)]"
+                                : isFreeLocked
+                                ? "bg-sky-500 shadow-[0_0_20px_rgba(14,165,233,0.6)]"
+                                : "bg-[#FF5500] shadow-[0_0_20px_rgba(255,85,0,0.6)]"
+                            }`}
+                          >
+                            {isVipLocked ? (
+                              <Crown className="w-5 h-5 fill-black text-black" />
+                            ) : isFreeLocked ? (
+                              <div className="w-5 h-5 flex-shrink-0">
+                                <OnePlusSignSvg />
+                              </div>
+                            ) : (
+                              <Play className="w-5 h-5 fill-white ml-0.5" />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -313,20 +430,21 @@ export default function StreamingAppClient({
           <>
             {/* 1. Cinematic Hero Banner */}
             <HeroBanner
-              slides={heroSlides && heroSlides.length > 0 ? heroSlides : FEATURED_SLIDES}
+              slides={activeHeroSlides}
               onPlayMovie={(movie) => setSelectedMovie(movie)}
               onMoreInfo={(movie) => setSelectedMovie(movie)}
             />
 
-            {/* 2. Continue Watching for Sarah */}
+            {/* 2. Continue Watching (only for titles user actually watched) */}
             <ContinueWatchingSection
-              items={CONTINUE_WATCHING}
+              items={[]}
               onSelectMovie={(movie) => setSelectedMovie(movie)}
             />
 
-            {/* 3. Category-Based Shelves (auto-grouped from allMovies) */}
+            {/* 3. Category-Based Shelves (auto-grouped from browseMovies) */}
             <CategoryCatalog
-              movies={allMovies}
+              movies={browseMovies}
+              genres={genres}
               categoryRules={categoryRulesConfig?.rules}
               catalogLimits={categoryRulesConfig?.limits}
               onSelectMovie={(movie) => setSelectedMovie(movie)}

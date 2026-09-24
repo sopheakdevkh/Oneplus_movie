@@ -7,6 +7,7 @@ import {
 } from "@/lib/server-movies";
 import { getCategoryRulesAction } from "@/app/actions/category-rules";
 import { getCastConfigAction } from "@/app/actions/cast";
+import { getGenresWithCounts } from "@/app/actions/genres";
 import StreamingAppClient from "@/components/StreamingAppClient";
 
 export default async function HomePage() {
@@ -18,6 +19,7 @@ export default async function HomePage() {
     featuredMovie,
     categoryRulesConfig,
     castConfig,
+    genres,
   ] = await Promise.all([
     getHeroSlides(),
     getTopRatedMovies(),
@@ -26,6 +28,7 @@ export default async function HomePage() {
     getFeaturedSpotlight(),
     getCategoryRulesAction(),
     getCastConfigAction(),
+    getGenresWithCounts(),
   ]);
 
   return (
@@ -34,6 +37,7 @@ export default async function HomePage() {
       topRatedMovies={topRatedMovies}
       actionMovies={actionMovies}
       allMovies={allMovies}
+      genres={genres}
       featuredMovie={featuredMovie}
       categoryRulesConfig={categoryRulesConfig}
       castConfig={castConfig}

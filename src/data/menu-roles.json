@@ -1,0 +1,320 @@
+{
+  "movies": {
+    "Money Heist": {
+      "menus": [
+        "Browse",
+        "TV Shows",
+        "New & Popular"
+      ],
+      "roleAccess": "vip"
+    },
+    "Wednesday": {
+      "menus": [
+        "Browse",
+        "TV Shows",
+        "New & Popular"
+      ],
+      "roleAccess": "free"
+    },
+    "Never Have I Ever": {
+      "menus": [
+        "Browse",
+        "TV Shows"
+      ],
+      "roleAccess": "public"
+    },
+    "LUCIFER": {
+      "menus": [
+        "Browse",
+        "TV Shows",
+        "New & Popular"
+      ],
+      "roleAccess": "vip"
+    },
+    "Lucifer": {
+      "menus": [
+        "Browse",
+        "TV Shows",
+        "New & Popular"
+      ],
+      "roleAccess": "vip"
+    },
+    "Spider-Man:\nAcross the Spider-Verse": {
+      "menus": [
+        "Browse",
+        "Movies",
+        "New & Popular"
+      ],
+      "roleAccess": "public"
+    },
+    "Spider-Man: Across the Spider-Verse": {
+      "menus": [
+        "Browse",
+        "Movies",
+        "New & Popular"
+      ],
+      "roleAccess": "public"
+    },
+    "Harry Potter (2011)": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "public"
+    },
+    "Harry Potter": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "public"
+    },
+    "Interstellar": {
+      "menus": [
+        "Browse",
+        "Movies",
+        "New & Popular"
+      ],
+      "roleAccess": "vip"
+    },
+    "Inception": {
+      "menus": [
+        "Browse",
+        "Movies",
+        "New & Popular"
+      ],
+      "roleAccess": "public"
+    },
+    "Tenet": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "free"
+    },
+    "cmub229mg0002rew65jbehibc": {
+      "menus": [
+        "Browse",
+        "New & Popular"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub23n5w000hrew62h3qrflk": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "public"
+    },
+    "The Lion King": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "public"
+    },
+    "cmub23k2n000grew65121xkjq": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "The Intelligent Investor ": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub23giu000frew6uq8t5pxb": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "Life of Pi": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub23dfw000erew6dshss065": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "free"
+    },
+    "Rocky Balbao": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub23a5y000drew6gvvp4tuu": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "The Intrepid ": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub236bk000crew6p9mnjf4w": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "The Wolf of Wall Street ": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub232rj000brew6uilp6iyv": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "The Founder": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub22yz4000arew66hczhs8l": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "Wall Street ": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub22vf90009rew6i015jd9r": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "The Intern": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub22rew0008rew6iasi1ph9": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "A Beautiful Mind ": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub22ntz0007rew6p5ajc4rx": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "Catch Me If You Can": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub22k3i0006rew6w0yiab2j": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "The Man from Toronto": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub22gh90005rew67qu38qmv": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "Moneyball": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub22dei0003rew6whdwncp0": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "Whiplash ": {
+      "menus": [
+        "Browse",
+        "Movies"
+      ],
+      "roleAccess": "vip"
+    },
+    "cmub226aj0001rew6h0ub19u0": {
+      "menus": [
+        "Browse",
+        "New & Popular"
+      ],
+      "roleAccess": "vip"
+    },
+    "The Social Network ": {
+      "menus": [
+        "Browse",
+        "New & Popular"
+      ],
+      "roleAccess": "vip"
+    },
+    "The Pursuit of Happyness": {
+      "menus": [
+        "Browse",
+        "New & Popular"
+      ],
+      "roleAccess": "vip"
+    }
+  }
+}

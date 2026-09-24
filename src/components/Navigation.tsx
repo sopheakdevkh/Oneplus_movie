@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -53,6 +53,15 @@ function getUserInitials(name?: string | null, email?: string | null): string {
   return "U";
 }
 
+// Resolves avatar image: custom uploaded avatar, or generated branded profile avatar
+function getProfileImageUrl(avatar?: string | null, name?: string | null, email?: string | null): string {
+  if (avatar && avatar.trim().length > 0) {
+    return avatar.trim();
+  }
+  const seed = name?.trim() || email?.split("@")[0] || "User";
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(seed)}&background=FF5500&color=ffffff&bold=true&font-size=0.45&rounded=true&size=160`;
+}
+
 export default function Navigation({
   activeTab = "Browse",
   onTabChange,
@@ -72,6 +81,7 @@ export default function Navigation({
     isAdmin,
     logout,
     openAuthModal,
+    checkAuth,
   } = useAuth();
 
   // Component UI State
@@ -168,6 +178,29 @@ export default function Navigation({
   const displayName = user?.name || (user?.email ? user.email.split("@")[0] : "Film Clubber");
   const displayEmail = user?.email || "";
   const initials = getUserInitials(user?.name, user?.email);
+
+  // Proactively fetch updated user profile and avatar
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkAuth();
+    }
+  }, [isAuthenticated, checkAuth]);
+
+  // Resolves custom uploaded avatar, or generated branded profile avatar
+  const avatarSrc = useMemo(() => {
+    if (!isAuthenticated && !user) return "";
+    return getProfileImageUrl(user?.avatar, user?.name, user?.email);
+  }, [isAuthenticated, user?.avatar, user?.name, user?.email]);
+
+  const [topAvatarError, setTopAvatarError] = useState(false);
+  const [dropAvatarError, setDropAvatarError] = useState(false);
+  const [mobileAvatarError, setMobileAvatarError] = useState(false);
+
+  useEffect(() => {
+    setTopAvatarError(false);
+    setDropAvatarError(false);
+    setMobileAvatarError(false);
+  }, [avatarSrc]);
 
   return (
     <header
@@ -355,17 +388,26 @@ export default function Navigation({
                       : "ring-1 ring-white/20 group-hover:ring-[#FF5500]/50 bg-[#161822]"
                   }`}
                 >
-                  <span
-                    className={`font-black text-xs sm:text-sm ${
-                      isAdminUser
-                        ? "text-[#EB0029]"
-                        : isPaidMember
-                        ? "text-amber-300"
-                        : "text-white"
-                    }`}
-                  >
-                    {initials}
-                  </span>
+                  {!topAvatarError && avatarSrc ? (
+                    <img
+                      src={avatarSrc}
+                      alt={displayName}
+                      className="w-full h-full object-cover rounded-full"
+                      onError={() => setTopAvatarError(true)}
+                    />
+                  ) : (
+                    <span
+                      className={`font-black text-xs sm:text-sm ${
+                        isAdminUser
+                          ? "text-[#EB0029]"
+                          : isPaidMember
+                          ? "text-amber-300"
+                          : "text-white"
+                      }`}
+                    >
+                      {initials}
+                    </span>
+                  )}
 
                   {/* Overlapping Gold/Red Member Crown Icon for Paid Members */}
                   {isPaidMember && (
@@ -413,7 +455,7 @@ export default function Navigation({
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 mb-1.5">
                     <div className="flex items-center space-x-2.5">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs overflow-hidden flex-shrink-0 ${
                           isAdminUser
                             ? "bg-[#EB0029]/20 text-[#EB0029] border border-[#EB0029]/40"
                             : isPaidMember
@@ -421,7 +463,16 @@ export default function Navigation({
                             : "bg-white/10 text-white border border-white/15"
                         }`}
                       >
-                        {initials}
+                        {!dropAvatarError && avatarSrc ? (
+                          <img
+                            src={avatarSrc}
+                            alt={displayName}
+                            className="w-full h-full object-cover rounded-full"
+                            onError={() => setDropAvatarError(true)}
+                          />
+                        ) : (
+                          initials
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-white text-sm truncate">{displayName}</p>
@@ -698,7 +749,7 @@ export default function Navigation({
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm ${
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm overflow-hidden flex-shrink-0 ${
                       isAdminUser
                         ? "bg-[#EB0029]/20 text-[#EB0029] ring-2 ring-[#EB0029]"
                         : isPaidMember
@@ -706,7 +757,16 @@ export default function Navigation({
                         : "bg-white/10 text-white ring-1 ring-white/20"
                     }`}
                   >
-                    {initials}
+                    {!mobileAvatarError && avatarSrc ? (
+                      <img
+                        src={avatarSrc}
+                        alt={displayName}
+                        className="w-full h-full object-cover rounded-full"
+                        onError={() => setMobileAvatarError(true)}
+                      />
+                    ) : (
+                      initials
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">

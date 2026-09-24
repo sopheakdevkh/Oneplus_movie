@@ -531,6 +531,40 @@ export default function MovieTableClient({ initialMovies }: MovieTableClientProp
                                 <span className="ml-2 text-emerald-400 font-semibold">• Video Ready</span>
                               )}
                             </p>
+                            {/* Assigned Menu Tabs & Role Access */}
+                            <div className="flex flex-wrap items-center gap-1 mt-1">
+                              {movie.menus?.map((menu) => (
+                                <span
+                                  key={menu}
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold ${
+                                    menu === "Browse"
+                                      ? "bg-[#A855F7]/15 text-[#A855F7] border border-[#A855F7]/30"
+                                      : menu === "TV Shows"
+                                      ? "bg-[#00E5FF]/15 text-[#00E5FF] border border-[#00E5FF]/30"
+                                      : menu === "Movies"
+                                      ? "bg-[#FF9F0A]/15 text-[#FF9F0A] border border-[#FF9F0A]/30"
+                                      : "bg-[#FF5500]/15 text-[#FF5500] border border-[#FF5500]/30"
+                                  }`}
+                                >
+                                  {menu}
+                                </span>
+                              ))}
+                              {movie.roleAccess && (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                                    movie.roleAccess === "vip"
+                                      ? "bg-amber-400/20 text-amber-300 border border-amber-400/30"
+                                      : movie.roleAccess === "free"
+                                      ? "bg-sky-400/20 text-sky-300 border border-sky-400/30"
+                                      : movie.roleAccess === "admin"
+                                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                                      : "bg-emerald-400/20 text-emerald-300 border border-emerald-400/30"
+                                  }`}
+                                >
+                                  {movie.roleAccess}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>

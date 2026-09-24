@@ -1,7 +1,6 @@
 import React from "react";
 import { getAdminMovies, getHeroBannerSlides } from "@/app/actions/movies";
 import HeroManagerClient from "@/components/admin/HeroManagerClient";
-import { FEATURED_SLIDES } from "@/lib/movies";
 
 export const metadata = {
   title: "Hero Banner Management | LensImpact Film Club Admin",
@@ -15,9 +14,9 @@ export default async function AdminHeroPage() {
     getAdminMovies(),
   ]);
 
-  // Fallback to default featured slides if no DB slides configured yet
+  // Fallback to top database movies if no hero slides configured yet
   const initialHeroSlides =
-    dbHeroSlides.length > 0 ? dbHeroSlides : FEATURED_SLIDES;
+    dbHeroSlides.length > 0 ? dbHeroSlides : allMovies.slice(0, 3);
 
   return <HeroManagerClient initialHeroSlides={initialHeroSlides} allMovies={allMovies} />;
 }

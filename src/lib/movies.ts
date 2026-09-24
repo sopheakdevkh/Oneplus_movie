@@ -28,6 +28,8 @@ export interface MovieData {
   badge?: string;
   subMeta?: string;
   episode?: string;
+  menus?: ("Browse" | "TV Shows" | "Movies" | "New & Popular")[];
+  roleAccess?: "public" | "free" | "vip" | "admin";
 }
 
 export interface ContinueWatchingItem {

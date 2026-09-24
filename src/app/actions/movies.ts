@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db";
 import { MovieData, EXACT_MOVIES } from "@/lib/movies";
+import { NavMenuTarget, MovieRoleAccess } from "@/lib/menu-roles";
+import {
+  enrichMoviesWithMenuRoles,
+  saveMovieMenuRule,
+} from "@/lib/server-menu-roles";
 
 export async function getAdminMovies(): Promise<MovieData[]> {
   try {
@@ -16,14 +21,14 @@ export async function getAdminMovies(): Promise<MovieData[]> {
     });
 
     if (movies.length > 0) {
-      return movies as unknown as MovieData[];
+      return enrichMoviesWithMenuRoles(movies as unknown as MovieData[]);
     }
   } catch (error) {
     console.warn("Failed to query movies from database:", error);
   }
 
-  // Fallback to in-memory catalog
-  return EXACT_MOVIES;
+  // Never return static mock movies
+  return [];
 }
 
 export async function getAdminStats() {
@@ -35,18 +40,18 @@ export async function getAdminStats() {
     ]);
 
     return {
-      totalMovies: movieCount || EXACT_MOVIES.length,
-      topRatedMovies: topRatedCount || 4,
-      totalGenres: genreCount || 6,
+      totalMovies: movieCount,
+      topRatedMovies: topRatedCount,
+      totalGenres: genreCount,
       activeSubscribers: 1420,
       totalViews: 84900,
     };
   } catch (error) {
     console.warn("Prisma stats fallback:", error);
     return {
-      totalMovies: EXACT_MOVIES.length,
-      topRatedMovies: 4,
-      totalGenres: 6,
+      totalMovies: 0,
+      topRatedMovies: 0,
+      totalGenres: 0,
       activeSubscribers: 1420,
       totalViews: 84900,
     };
@@ -72,6 +77,8 @@ export async function createMovieAction(data: {
   isTopRated: boolean;
   rank?: number | null;
   genreNames: string[];
+  menus?: NavMenuTarget[];
+  roleAccess?: MovieRoleAccess;
 }) {
   const slug =
     data.slug?.trim() ||
@@ -145,9 +152,19 @@ export async function createMovieAction(data: {
       },
     });
 
+    if (data.menus || data.roleAccess) {
+      const rule = {
+        menus: data.menus || ["Movies"],
+        roleAccess: data.roleAccess || "public",
+      };
+      saveMovieMenuRule(movie.title, rule);
+      saveMovieMenuRule(movie.id, rule);
+    }
+
     revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath("/admin/movies");
+    revalidatePath("/admin/menus");
 
     return { success: true, movie };
   } catch (error: unknown) {
@@ -177,6 +194,8 @@ export async function updateMovieAction(
     isTopRated: boolean;
     rank?: number | null;
     genreNames: string[];
+    menus?: NavMenuTarget[];
+    roleAccess?: MovieRoleAccess;
   }
 ) {
   try {
@@ -240,9 +259,19 @@ export async function updateMovieAction(
       },
     });
 
+    if (data.menus || data.roleAccess) {
+      const rule = {
+        menus: data.menus || ["Movies"],
+        roleAccess: data.roleAccess || "public",
+      };
+      saveMovieMenuRule(movie.title, rule);
+      saveMovieMenuRule(id, rule);
+    }
+
     revalidatePath("/");
     revalidatePath("/admin");
     revalidatePath("/admin/movies");
+    revalidatePath("/admin/menus");
 
     return { success: true, movie };
   } catch (error: unknown) {

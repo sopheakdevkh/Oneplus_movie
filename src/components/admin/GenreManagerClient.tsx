@@ -18,11 +18,15 @@ import {
   TrendingUp,
   Hash,
   Sliders,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   createGenreAction,
   updateGenreAction,
   deleteGenreAction,
+  batchUpdateGenreOrdersAction,
   GenreWithCount,
 } from "@/app/actions/genres";
 
@@ -38,7 +42,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
   // Create / Edit modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingGenre, setEditingGenre] = useState<GenreWithCount | null>(null);
-  const [formData, setFormData] = useState({ name: "", slug: "" });
+  const [formData, setFormData] = useState({ name: "", slug: "", order: 1 });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Delete modal state
@@ -56,13 +60,14 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
   // Open modal for Create or Edit
   const openCreateModal = () => {
     setEditingGenre(null);
-    setFormData({ name: "", slug: "" });
+    const maxOrder = genres.reduce((max, g) => Math.max(max, g.order || 0), 0);
+    setFormData({ name: "", slug: "", order: maxOrder + 1 });
     setModalOpen(true);
   };
 
   const openEditModal = (genre: GenreWithCount) => {
     setEditingGenre(genre);
-    setFormData({ name: genre.name, slug: genre.slug });
+    setFormData({ name: genre.name, slug: genre.slug, order: genre.order ?? 1 });
     setModalOpen(true);
   };
 
@@ -83,6 +88,47 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
     }));
   };
 
+  // Handle Quick Reorder (Move Up / Down on Browse section)
+  const handleQuickReorder = async (genre: GenreWithCount, direction: "up" | "down") => {
+    const sorted = [...genres].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    const currentIndex = sorted.findIndex((g) => g.id === genre.id);
+    if (currentIndex === -1) return;
+
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= sorted.length) return;
+
+    const targetGenre = sorted[targetIndex];
+    let newCurrentOrder = targetGenre.order ?? (targetIndex + 1);
+    let newTargetOrder = genre.order ?? (currentIndex + 1);
+
+    if (newCurrentOrder === newTargetOrder) {
+      newCurrentOrder = direction === "up" ? Math.max(1, newCurrentOrder - 1) : newCurrentOrder + 1;
+    }
+
+    // Optimistically update local state sorted by order
+    setGenres((prev) => {
+      const next = prev.map((g) => {
+        if (g.id === genre.id) return { ...g, order: newCurrentOrder };
+        if (g.id === targetGenre.id) return { ...g, order: newTargetOrder };
+        return g;
+      });
+      return next.sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.name.localeCompare(b.name));
+    });
+
+    const res = await batchUpdateGenreOrdersAction({
+      [genre.slug]: newCurrentOrder,
+      [genre.id]: newCurrentOrder,
+      [targetGenre.slug]: newTargetOrder,
+      [targetGenre.id]: newTargetOrder,
+    });
+
+    if (res.success) {
+      showNotification(`Moved "${genre.name}" ${direction} to shelf position #${newCurrentOrder}`);
+    } else {
+      showNotification("Failed to update display order", "error");
+    }
+  };
+
   // Handle Create or Update
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,38 +137,44 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
       return;
     }
 
+    const orderNum = Math.max(1, Number(formData.order) || 1);
     setIsSubmitting(true);
 
     if (editingGenre) {
       // UPDATE
-      const res = await updateGenreAction(editingGenre.id, formData.name, formData.slug);
+      const res = await updateGenreAction(editingGenre.id, formData.name, formData.slug, orderNum);
       if (res.success && res.genre) {
-        setGenres((prev) =>
-          prev.map((g) =>
+        setGenres((prev) => {
+          const next = prev.map((g) =>
             g.id === editingGenre.id
-              ? { ...g, name: res.genre.name, slug: res.genre.slug }
+              ? { ...g, name: res.genre.name, slug: res.genre.slug, order: orderNum }
               : g
-          )
-        );
-        showNotification(`Updated category "${res.genre.name}" successfully.`);
+          );
+          return next.sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.name.localeCompare(b.name));
+        });
+        showNotification(`Updated category "${res.genre.name}" (Order #${orderNum}) successfully.`);
         setModalOpen(false);
       } else {
         showNotification(res.error || "Failed to update category", "error");
       }
     } else {
       // CREATE
-      const res = await createGenreAction(formData.name, formData.slug);
+      const res = await createGenreAction(formData.name, formData.slug, orderNum);
       if (res.success && res.genre) {
-        setGenres((prev) => [
-          ...prev,
-          {
-            id: res.genre.id,
-            name: res.genre.name,
-            slug: res.genre.slug,
-            _count: { movies: 0 },
-          },
-        ]);
-        showNotification(`Created category "${res.genre.name}" successfully.`);
+        setGenres((prev) => {
+          const next = [
+            ...prev,
+            {
+              id: res.genre.id,
+              name: res.genre.name,
+              slug: res.genre.slug,
+              order: orderNum,
+              _count: { movies: 0 },
+            },
+          ];
+          return next.sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.name.localeCompare(b.name));
+        });
+        showNotification(`Created category "${res.genre.name}" at order #${orderNum} successfully.`);
         setModalOpen(false);
       } else {
         showNotification(res.error || "Failed to create category", "error");
@@ -159,11 +211,14 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
     return { totalCategories, totalLinkedMovies, topGenre };
   }, [genres]);
 
-  // Filtered genres by search
+  // Filtered genres by search (sorted by order rank ascending)
   const filteredGenres = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return genres;
-    return genres.filter(
+    const sorted = [...genres].sort(
+      (a, b) => (a.order ?? 999) - (b.order ?? 999) || a.name.localeCompare(b.name)
+    );
+    if (!q) return sorted;
+    return sorted.filter(
       (g) => g.name.toLowerCase().includes(q) || g.slug.toLowerCase().includes(q)
     );
   }, [genres, search]);
@@ -205,7 +260,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
             Movie &amp; Series Categories
           </h1>
           <p className="text-xs text-[#8E8E93] mt-0.5">
-            Create, organize, and manage streaming category classifications for catalog filtering.
+            Create, order, and manage streaming category classifications for catalog shelves and home Browse section.
           </p>
         </div>
 
@@ -242,7 +297,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
           <p className="text-2xl font-black text-white tracking-tight">
             {metrics.totalCategories}
           </p>
-          <span className="text-[10px] text-white/40 font-medium">Active catalog tags</span>
+          <span className="text-[10px] text-white/40 font-medium">Configured catalog shelves</span>
         </div>
 
         {/* Total Associated Titles */}
@@ -305,7 +360,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
         {/* View Switcher */}
         <div className="flex items-center space-x-3">
           <span className="text-xs text-[#8E8E93]">
-            Showing <span className="text-white font-bold">{filteredGenres.length}</span> of {genres.length} genres
+            Showing <span className="text-white font-bold">{filteredGenres.length}</span> of {genres.length} categories (ordered for Browse section)
           </span>
 
           <div className="flex items-center p-1 rounded-xl bg-[#181A24] border border-white/10">
@@ -345,45 +400,76 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
               className="p-5 rounded-2xl bg-[#12131A] border border-white/10 hover:border-[#EB0028]/50 hover:shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex flex-col justify-between transition-all duration-300 group"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#EB0028]/15 text-[#EB0028] flex items-center justify-center border border-[#EB0028]/20 group-hover:scale-105 transition-transform">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#EB0028]/15 text-[#EB0028] flex items-center justify-center border border-[#EB0028]/20 group-hover:scale-105 transition-transform flex-shrink-0">
                     <Tags className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white group-hover:text-white/95 transition-colors">
-                      {genre.name}
-                    </h3>
+                  <div className="min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-sm font-bold text-white group-hover:text-white/95 transition-colors truncate">
+                        {genre.name}
+                      </h3>
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-[#EB0028]/20 border border-[#EB0028]/40 text-[#EB0028] shadow-[0_0_8px_rgba(235,0,40,0.2)] shrink-0"
+                        title="Display order on Home Browse page"
+                      >
+                        #{genre.order ?? 99}
+                      </span>
+                    </div>
                     <p className="text-[11px] text-[#8E8E93] flex items-center space-x-1 mt-0.5">
                       <Hash className="w-3 h-3 text-white/30" />
-                      <span>{genre.slug}</span>
+                      <span className="truncate">{genre.slug}</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-white">
+                <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-white shrink-0">
                   <Film className="w-3 h-3 text-[#8E8E93]" />
                   <span>{genre._count?.movies ?? 0}</span>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end space-x-1.5 pt-4 mt-3 border-t border-white/5">
-                <button
-                  onClick={() => openEditModal(genre)}
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                  title="Edit Genre"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  <span>Edit</span>
-                </button>
-                <button
-                  onClick={() => setDeletingGenre(genre)}
-                  className="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
-                  title="Delete Genre"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete</span>
-                </button>
+              {/* Order adjustment & Action Buttons */}
+              <div className="flex items-center justify-between pt-4 mt-3 border-t border-white/5">
+                <div className="flex items-center space-x-1">
+                  <span className="text-[10px] uppercase font-bold text-white/40 mr-1">Shelf:</span>
+                  <button
+                    onClick={() => handleQuickReorder(genre, "up")}
+                    className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                    title="Move up on Browse section"
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleQuickReorder(genre, "down")}
+                    className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                    title="Move down on Browse section"
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-[11px] font-mono font-bold text-white/60 ml-1">
+                    Pos #{genre.order ?? 99}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={() => openEditModal(genre)}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                    title="Edit Category & Order"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => setDeletingGenre(genre)}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                    title="Delete Category"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -408,6 +494,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
           <table className="w-full text-left text-xs text-white">
             <thead className="bg-[#171922] text-[#8E8E93] border-b border-white/10 font-bold uppercase tracking-wider text-[11px]">
               <tr>
+                <th className="py-4 px-4 w-32 text-center">Browse Order</th>
                 <th className="py-4 px-5">Genre Name</th>
                 <th className="py-4 px-4">URL Slug</th>
                 <th className="py-4 px-4">Catalog Movies</th>
@@ -417,6 +504,29 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
             <tbody className="divide-y divide-white/5">
               {filteredGenres.map((genre) => (
                 <tr key={genre.id} className="hover:bg-white/[0.03] transition-colors">
+                  <td className="py-3.5 px-4 text-center">
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="w-7 h-7 rounded-lg bg-[#EB0028]/15 border border-[#EB0028]/30 text-[#EB0028] text-xs font-black flex items-center justify-center">
+                        #{genre.order ?? 99}
+                      </span>
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => handleQuickReorder(genre, "up")}
+                          className="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                          title="Move shelf up on Browse"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => handleQuickReorder(genre, "down")}
+                          className="p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                          title="Move shelf down on Browse"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </td>
                   <td className="py-3.5 px-5 font-bold text-white text-sm">
                     <div className="flex items-center space-x-2.5">
                       <div className="w-7 h-7 rounded-lg bg-[#EB0028]/15 text-[#EB0028] flex items-center justify-center">
@@ -441,7 +551,7 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
                       <button
                         onClick={() => openEditModal(genre)}
                         className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                        title="Edit Genre"
+                        title="Edit Genre & Order"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -485,19 +595,47 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#8E8E93] mb-1.5">
-                  Category Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={handleNameChange}
-                  placeholder="e.g. Mindset & Personal Growth, Sci-Fi, Award Shorts..."
-                  required
-                  autoFocus
-                  className="w-full h-11 px-3.5 rounded-xl bg-[#1B1D2A] border border-white/10 text-white text-sm focus:border-[#EB0028] focus:ring-1 focus:ring-[#EB0028] focus:outline-none transition-all"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-[#8E8E93] mb-1.5">
+                    Category Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={handleNameChange}
+                    placeholder="e.g. Mindset & Personal Growth, Sci-Fi, Award Shorts..."
+                    required
+                    autoFocus
+                    className="w-full h-11 px-3.5 rounded-xl bg-[#1B1D2A] border border-white/10 text-white text-sm focus:border-[#EB0028] focus:ring-1 focus:ring-[#EB0028] focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-[#8E8E93] mb-1.5 flex items-center justify-between">
+                    <span>Display Order (Shelf Position in Browse Section) *</span>
+                    <span className="text-[11px] text-[#EB0028] font-mono font-bold">
+                      Position #{formData.order}
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    value={formData.order}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        order: Math.max(1, parseInt(e.target.value) || 1),
+                      })
+                    }
+                    required
+                    className="w-full h-11 px-3.5 rounded-xl bg-[#1B1D2A] border border-white/10 text-white text-sm font-bold focus:border-[#EB0028] focus:ring-1 focus:ring-[#EB0028] focus:outline-none transition-all"
+                  />
+                  <p className="text-[11px] text-white/40 mt-1">
+                    Determines vertical sequence of category shelves on the home Browse section (lower numbers appear first).
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -515,10 +653,15 @@ export default function GenreManagerClient({ initialGenres }: GenreManagerClient
 
               {/* Preview Pill */}
               <div className="p-3 rounded-xl bg-[#1B1D2A] border border-white/5 flex items-center justify-between">
-                <span className="text-[11px] text-[#8E8E93]">Live Pill Preview:</span>
-                <span className="px-3 py-1 rounded-full bg-[#EB0028]/15 border border-[#EB0028]/30 text-[#EB0028] text-xs font-bold">
-                  {formData.name || "Preview Category"}
-                </span>
+                <span className="text-[11px] text-[#8E8E93]">Live Shelf Preview:</span>
+                <div className="flex items-center space-x-2">
+                  <span className="px-2 py-0.5 rounded-md bg-white/10 text-white/80 font-mono text-[11px] font-bold">
+                    Order #{formData.order}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-[#EB0028]/15 border border-[#EB0028]/30 text-[#EB0028] text-xs font-bold">
+                    {formData.name || "Preview Category"}
+                  </span>
+                </div>
               </div>
 
               {/* Actions */}

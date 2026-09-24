@@ -18,11 +18,13 @@ import {
   Sliders,
   UserCheck,
   LogOut,
+  Tv,
 } from "lucide-react";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/hero", label: "Hero Banner", icon: MonitorPlay },
+  { href: "/admin/menus", label: "Menu & Role Access", icon: Tv },
   { href: "/admin/subscriptions", label: "Subscriptions & Users", icon: Users },
   { href: "/admin/content", label: "Film CMS (Split Access)", icon: Sparkles },
   { href: "/admin/movies", label: "Movies Catalog", icon: Film },

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   X,
   Play,
@@ -29,6 +30,9 @@ import {
   MessageSquare,
   Lock,
   FileText,
+  Crown,
+  ArrowRight,
+  ShieldAlert,
 } from "lucide-react";
 import { MovieData } from "../lib/movies";
 import { getBannerBackdropUrl, getPosterCardUrl } from "../lib/cloudinary";
@@ -39,6 +43,8 @@ import DiscussionForum from "@/components/comments/DiscussionForum";
 import { useAuth } from "@/context/AuthContext";
 import { CastMember, CastDataConfig, getCastForMovie } from "@/lib/cast";
 import { getCastConfigAction } from "@/app/actions/cast";
+import { isMovieAccessibleForRole } from "@/lib/menu-roles";
+import { OnePlusSignSvg } from "./OnePlusLogo";
 
 interface MovieDetailsModalProps {
   movie: MovieData | null;
@@ -76,7 +82,8 @@ export default function MovieDetailsModal({
 
   // Parse video source (YouTube, Vimeo, or direct video file)
   const videoSource = useMemo(() => parseVideoSource(movie?.videoUrl), [movie?.videoUrl]);
-  const { user } = useAuth();
+  const { user, userState, openAuthModal } = useAuth();
+  const isAccessible = isMovieAccessibleForRole(movie?.roleAccess, userState);
 
   // Reset playback state when movie changes
   useEffect(() => {
@@ -118,6 +125,14 @@ export default function MovieDetailsModal({
   };
 
   const handleStartPlayback = () => {
+    if (!isAccessible) {
+      if (movie?.roleAccess === "vip") {
+        triggerToast("VIP Subscription required to stream this title");
+      } else {
+        openAuthModal({ defaultTab: "signup" });
+      }
+      return;
+    }
     if (!movie?.videoUrl || !videoSource) {
       triggerToast("No trailer URL available for this title yet");
       return;
@@ -509,19 +524,72 @@ export default function MovieDetailsModal({
                 </span>
               </div>
 
-              {/* Center Play Button with Ambilight Glow */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button
-                  onClick={handleStartPlayback}
-                  className="group/btn relative flex items-center space-x-3 px-6 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-white via-white to-[#F2F2F2] text-black font-black shadow-[0_0_40px_rgba(255,255,255,0.35),0_10px_20px_rgba(0,0,0,0.5)] hover:scale-105 active:scale-95 transition-all duration-300"
-                >
-                  <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center group-hover/btn:bg-[#FF9F0A] group-hover/btn:text-black transition-colors">
-                    <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+              {/* Center Play Button with Ambilight Glow or Role Access Gate */}
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                {!isAccessible ? (
+                  <div className="max-w-md w-full p-6 sm:p-7 rounded-3xl bg-black/85 backdrop-blur-2xl border border-white/20 text-center space-y-3.5 shadow-2xl animate-in zoom-in-95">
+                    {movie.roleAccess === "vip" ? (
+                      <>
+                        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-black uppercase tracking-wider mx-auto">
+                          <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <span>VIP Member Exclusive</span>
+                        </div>
+                        <h4 className="text-xl font-black text-white tracking-tight">
+                          VIP Subscription Required
+                        </h4>
+                        <p className="text-xs text-[#8E8E93] leading-relaxed">
+                          This video stream is reserved for LensImpact Film Club VIP Subscribers. Upgrade now to stream all exclusive cinema and directors cuts.
+                        </p>
+                        <div className="pt-1 flex items-center justify-center gap-3">
+                          <Link
+                            href="/pricing"
+                            className="inline-flex items-center space-x-2 px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 via-[#FF5500] to-[#EB0029] hover:brightness-110 text-white font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all"
+                          >
+                            <span>Upgrade to VIP ($4.99/mo)</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </Link>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-sky-400/20 border border-sky-400/40 text-sky-300 text-xs font-black uppercase tracking-wider mx-auto">
+                          <div className="w-3.5 h-3.5 flex-shrink-0">
+                            <OnePlusSignSvg />
+                          </div>
+                          <span>Free Account Required</span>
+                        </div>
+                        <h4 className="text-xl font-black text-white tracking-tight">
+                          Join Free to Stream
+                        </h4>
+                        <p className="text-xs text-[#8E8E93] leading-relaxed">
+                          Create a free LensImpact Club account in 10 seconds to unlock and watch this video.
+                        </p>
+                        <div className="pt-1 flex items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => openAuthModal({ defaultTab: "signup" })}
+                            className="inline-flex items-center space-x-2 px-6 py-3 rounded-full bg-[#FF5500] hover:bg-[#ff6a1f] text-white font-extrabold text-xs shadow-lg shadow-[#FF5500]/25 transition-all cursor-pointer"
+                          >
+                            <span>Create Free Account</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <span className="tracking-tight text-sm sm:text-base font-extrabold">
-                    Play Trailer
-                  </span>
-                </button>
+                ) : (
+                  <button
+                    onClick={handleStartPlayback}
+                    className="group/btn relative flex items-center space-x-3 px-6 sm:px-8 py-3.5 sm:py-4 rounded-full bg-gradient-to-r from-white via-white to-[#F2F2F2] text-black font-black shadow-[0_0_40px_rgba(255,255,255,0.35),0_10px_20px_rgba(0,0,0,0.5)] hover:scale-105 active:scale-95 transition-all duration-300"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center group-hover/btn:bg-[#FF9F0A] group-hover/btn:text-black transition-colors">
+                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                    </div>
+                    <span className="tracking-tight text-sm sm:text-base font-extrabold">
+                      Play Trailer
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -940,13 +1008,22 @@ export default function MovieDetailsModal({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                   {relatedMovies.map((item) => {
                     const poster = getPosterCardUrl(item.posterUrl, 400, 250);
+                    const isVipLocked = item.roleAccess === "vip" && userState !== "paid_member" && userState !== "admin";
+                    const isFreeLocked = item.roleAccess === "free" && userState === "guest";
+
                     return (
                       <div
                         key={item.id}
                         onClick={() => {
                           onSelectMovie?.(item);
                         }}
-                        className="group cursor-pointer select-none rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-[#FF9F0A]/40 transition-all duration-300 hover:scale-[1.02]"
+                        className={`group cursor-pointer select-none rounded-2xl overflow-hidden bg-white/5 border transition-all duration-300 hover:scale-[1.02] ${
+                          isVipLocked
+                            ? "border-amber-400/40 hover:border-amber-400"
+                            : isFreeLocked
+                            ? "border-sky-400/40 hover:border-sky-400"
+                            : "border-white/10 hover:border-[#FF9F0A]/40"
+                        }`}
                       >
                         <div className="relative aspect-[16/10] w-full overflow-hidden bg-black">
                           <Image
@@ -957,6 +1034,50 @@ export default function MovieDetailsModal({
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                          {/* Role Access Badges */}
+                          {item.roleAccess === "vip" ? (
+                            <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-[#FF5500] text-black text-[10px] font-black uppercase tracking-wider flex items-center space-x-1 shadow-lg backdrop-blur-md">
+                              <Crown className="w-3 h-3 fill-black text-black" />
+                              <span>VIP</span>
+                            </div>
+                          ) : item.roleAccess === "free" ? (
+                            <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-sky-500/90 text-white text-[10px] font-black uppercase tracking-wider flex items-center space-x-1.5 shadow-lg backdrop-blur-md">
+                              <div className="w-3 h-3 flex-shrink-0">
+                                <OnePlusSignSvg />
+                              </div>
+                              <span>FREE</span>
+                            </div>
+                          ) : item.roleAccess === "admin" ? (
+                            <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-rose-500/90 text-white text-[10px] font-black uppercase tracking-wider flex items-center space-x-1 shadow-lg backdrop-blur-md">
+                              <ShieldAlert className="w-3 h-3" />
+                              <span>ADMIN</span>
+                            </div>
+                          ) : null}
+
+                          {/* Hover Play / Status Action Button */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                            <div
+                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white flex items-center justify-center ${
+                                isVipLocked
+                                  ? "bg-gradient-to-r from-amber-500 to-[#FF5500] shadow-[0_0_20px_rgba(245,158,11,0.6)]"
+                                  : isFreeLocked
+                                  ? "bg-sky-500 shadow-[0_0_20px_rgba(14,165,233,0.6)]"
+                                  : "bg-[#FF5500] shadow-[0_0_20px_rgba(255,85,0,0.6)]"
+                              }`}
+                            >
+                              {isVipLocked ? (
+                                <Crown className="w-4 h-4 fill-black text-black" />
+                              ) : isFreeLocked ? (
+                                <div className="w-4 h-4 flex-shrink-0">
+                                  <OnePlusSignSvg />
+                                </div>
+                              ) : (
+                                <Play className="w-4 h-4 fill-white ml-0.5" />
+                              )}
+                            </div>
+                          </div>
+
                           <div className="absolute bottom-2 right-2 flex items-center space-x-1 px-1.5 py-0.5 rounded bg-black/60 text-[10px] font-bold text-white">
                             <Star className="w-3 h-3 fill-[#FF9F0A] text-[#FF9F0A]" />
                             <span>{item.rating.toFixed(1)}</span>

@@ -9,6 +9,7 @@ export interface UserSession {
   id: string;
   email: string;
   name?: string | null;
+  avatar?: string | null;
   role: string;
   subscription_status: string;
   subscription_tier?: string | null;
@@ -78,6 +79,7 @@ function normalizeUser(rawUser: any): UserSession {
     id: rawUser.id,
     email: rawUser.email,
     name: rawUser.name || null,
+    avatar: rawUser.avatar || null,
     role: (rawUser.role || "user").toLowerCase(),
     subscription_status: status,
     subscription_tier: tier,

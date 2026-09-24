@@ -134,14 +134,6 @@ export default function AuthModal({
     }
   };
 
-  // Demo shortcut for evaluation
-  const handleQuickSimulate = (role: "free_user" | "paid_member") => {
-    setUserState(role);
-    if (onSuccess) onSuccess();
-    router.refresh();
-    onClose();
-  };
-
   return (
     // Requirement 4: Backdrop container with click dismissal
     <div
@@ -294,27 +286,6 @@ export default function AuthModal({
             )}
           </button>
         </form>
-
-        {/* Demo Fast-Track Controls */}
-        <div className="pt-2 border-t border-white/5 text-center">
-          <p className="text-[10px] text-white/40 mb-1.5">Development Evaluation Shortcuts:</p>
-          <div className="flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickSimulate("free_user")}
-              className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] text-white/70 hover:text-white font-medium transition-colors cursor-pointer"
-            >
-              Sign In as Free User
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickSimulate("paid_member")}
-              className="px-2.5 py-1 rounded-lg bg-[#FF5500]/15 hover:bg-[#FF5500]/25 border border-[#FF5500]/30 text-[10px] text-[#FF5500] font-bold transition-colors cursor-pointer"
-            >
-              Sign In as Club Member
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

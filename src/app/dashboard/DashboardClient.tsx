@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -27,6 +27,9 @@ import {
   Shield,
   Clock,
   Tv,
+  Upload,
+  Camera,
+  Trash2,
 } from "lucide-react";
 import { LensImpactLogo } from "@/components/OnePlusLogo";
 import StreamPulseFooter from "@/components/StreamPulseFooter";
@@ -78,6 +81,12 @@ export default function DashboardClient() {
   const [displayName, setDisplayName] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Avatar upload state
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarMessage, setAvatarMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -135,14 +144,81 @@ export default function DashboardClient() {
     }
   };
 
-  // Populate display name when user loads
+  // Populate display name and avatar when user loads
   useEffect(() => {
     if (user?.name) {
       setDisplayName(user.name);
     } else if (user?.email) {
       setDisplayName(user.email.split("@")[0]);
     }
+    if (user?.avatar) {
+      setAvatarUrl(user.avatar);
+    } else {
+      setAvatarUrl(null);
+    }
   }, [user]);
+
+  // Handle Avatar File Upload
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarMessage({ type: "error", text: "Image file exceeds 5MB limit." });
+      return;
+    }
+
+    setAvatarMessage(null);
+    setIsUploadingAvatar(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const res = await fetch("/api/user/avatar", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to upload avatar.");
+      }
+
+      setAvatarUrl(data.avatar);
+      setAvatarMessage({ type: "success", text: "Profile image updated successfully!" });
+      await checkAuth();
+    } catch (err: any) {
+      setAvatarMessage({ type: "error", text: err.message || "Failed to upload avatar." });
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Handle Remove Avatar
+  const handleRemoveAvatar = async () => {
+    setIsUploadingAvatar(true);
+    setAvatarMessage(null);
+    try {
+      const res = await fetch("/api/user/avatar", {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Failed to remove avatar.");
+      }
+      setAvatarUrl(null);
+      setAvatarMessage({ type: "success", text: "Avatar removed. Reverted to initials." });
+      await checkAuth();
+    } catch (err: any) {
+      setAvatarMessage({ type: "error", text: err.message || "Failed to remove avatar." });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   // Fetch watch history counts for dynamic dashboard metrics
   useEffect(() => {
@@ -301,6 +377,9 @@ export default function DashboardClient() {
   const userEmail = user.email;
   const isPaidUser = isMember || user.subscription_status === "active";
   const userRole = user.role || "user";
+  const displayAvatarSrc =
+    avatarUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(userFullName || "User")}&background=FF5500&color=ffffff&bold=true&font-size=0.45&rounded=true&size=160`;
   const memberSinceFormatted = user.created_at || user.createdAt
     ? new Date(user.created_at || user.createdAt!).toLocaleDateString("en-US", {
         month: "long",
@@ -364,11 +443,25 @@ export default function DashboardClient() {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border-b border-white/5 pb-6">
             <div className="flex items-center space-x-4">
-              {/* Avatar circle */}
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#FF5500] to-[#EB0029] p-0.5 shadow-[0_0_20px_rgba(255,85,0,0.3)] flex-shrink-0">
-                <div className="w-full h-full rounded-[14px] bg-[#12141D] flex items-center justify-center text-white font-black text-xl tracking-wider">
-                  {initials}
+              {/* Avatar circle with image or initials */}
+              <div className="relative group/avatar flex-shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-[#FF5500] to-[#EB0029] p-0.5 shadow-[0_0_20px_rgba(255,85,0,0.3)]">
+                  <div className="w-full h-full rounded-[14px] bg-[#12141D] flex items-center justify-center text-white font-black text-xl sm:text-2xl tracking-wider overflow-hidden">
+                    <img
+                      src={displayAvatarSrc}
+                      alt={userFullName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
+                {/* Quick Edit Overlay Button */}
+                <button
+                  onClick={() => handleTabSwitch("settings")}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#181A24] border border-white/20 text-white/80 hover:text-white flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer"
+                  title="Upload / Change profile avatar"
+                >
+                  <Camera className="w-3.5 h-3.5 text-[#FF5500]" />
+                </button>
               </div>
 
               <div>
@@ -591,7 +684,103 @@ export default function DashboardClient() {
               <div>
                 <h3 className="text-lg font-black text-white">Profile Information</h3>
                 <p className="text-xs text-[#8E8E93] mt-0.5">
-                  Update your display name and review account credentials.
+                  Update your display name, upload a profile photo, and review credentials.
+                </p>
+              </div>
+
+              {/* Profile Avatar Upload & Management */}
+              <div className="p-5 rounded-2xl bg-[#141620] border border-white/5 space-y-4 max-w-xl">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    {/* Preview circle */}
+                    <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#FF5500] to-[#EB0029] p-0.5 shadow-[0_0_15px_rgba(255,85,0,0.25)] flex-shrink-0">
+                      <div className="w-full h-full rounded-[14px] bg-[#12141D] flex items-center justify-center text-white font-black text-xl tracking-wider overflow-hidden">
+                        <img
+                          src={displayAvatarSrc}
+                          alt="Avatar Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      {isUploadingAvatar && (
+                        <div className="absolute inset-0 rounded-2xl bg-black/75 backdrop-blur-xs flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 text-[#FF5500] animate-spin" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center space-x-2">
+                        <span>Profile Photo</span>
+                        {avatarUrl ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                            Custom Uploaded Avatar
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">
+                            Auto-Generated Avatar
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-xs text-[#8E8E93] mt-0.5">
+                        Upload your profile image (all roles supported: Free, VIP, Admin).
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Upload and Remove Buttons */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                      onChange={handleAvatarFileSelect}
+                      className="hidden"
+                      id="avatar-file-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingAvatar}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5500] to-[#EB0029] hover:from-[#ff6b1a] hover:to-[#ff1a40] text-white text-xs font-bold transition-all flex items-center space-x-2 shadow-md disabled:opacity-50 cursor-pointer active:scale-95"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingAvatar ? "Uploading..." : avatarUrl ? "Change Photo" : "Upload Photo"}</span>
+                    </button>
+
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        disabled={isUploadingAvatar}
+                        className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold transition-all border border-red-500/20 disabled:opacity-50 cursor-pointer flex items-center space-x-1"
+                        title="Remove custom photo and reset to initials"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Remove</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {avatarMessage && (
+                  <div
+                    className={`p-3 rounded-xl flex items-center space-x-2 text-xs font-medium ${
+                      avatarMessage.type === "success"
+                        ? "bg-emerald-500/10 border border-emerald-500/25 text-emerald-400"
+                        : "bg-[#EB0029]/10 border border-[#EB0029]/25 text-[#EB0029]"
+                    }`}
+                  >
+                    {avatarMessage.type === "success" ? (
+                      <Check className="w-4 h-4 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    )}
+                    <span>{avatarMessage.text}</span>
+                  </div>
+                )}
+
+                <p className="text-[11px] text-white/40">
+                  Supports JPG, PNG, WebP, GIF or SVG up to 5MB. Visible across Community discussions and profile badges.
                 </p>
               </div>
 

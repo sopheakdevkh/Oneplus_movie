@@ -25,6 +25,7 @@ import {
   DEFAULT_CATALOG_LIMITS,
 } from "@/lib/category-rules";
 import { useAuth } from "@/context/AuthContext";
+import { OnePlusSignSvg } from "./OnePlusLogo";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -34,19 +35,54 @@ export interface CategoryBucket {
   movies: MovieData[];
 }
 
-function groupMoviesByCategory(movies: MovieData[]): CategoryBucket[] {
+function groupMoviesByCategory(
+  movies: MovieData[],
+  genresList?: Array<{ slug: string; name: string; order?: number }>
+): CategoryBucket[] {
   const bucketsMap = new Map<string, CategoryBucket>();
 
-  // 1. Pre-seed default categories order so preferred sections show first if they have movies
-  for (const slug of CATEGORY_ORDER) {
+  // 1. Build dictionary of custom names and order numbering from database genres
+  const customNamesMap = new Map<string, string>();
+  const orderMap = new Map<string, number>();
+
+  if (genresList) {
+    for (let i = 0; i < genresList.length; i++) {
+      const g = genresList[i];
+      if (g.slug && g.name) {
+        customNamesMap.set(g.slug, g.name);
+        customNamesMap.set(g.slug.toLowerCase(), g.name);
+        const ord = typeof g.order === "number" ? g.order : i + 1;
+        orderMap.set(g.slug, ord);
+        orderMap.set(g.slug.toLowerCase(), ord);
+      }
+    }
+  }
+
+  // 2. Harvest any custom genre names directly from movies relation
+  for (const movie of movies) {
+    if (movie.genres) {
+      for (const g of movie.genres) {
+        if (g.slug && g.name) {
+          customNamesMap.set(g.slug, g.name);
+        }
+      }
+    }
+  }
+
+  // 3. Pre-seed default categories order so preferred sections show first if they have movies
+  for (let idx = 0; idx < CATEGORY_ORDER.length; idx++) {
+    const slug = CATEGORY_ORDER[idx];
+    if (!orderMap.has(slug)) {
+      orderMap.set(slug, 100 + idx);
+    }
     bucketsMap.set(slug, {
       slug,
-      name: CATEGORIES[slug] || slug,
+      name: customNamesMap.get(slug) || CATEGORIES[slug] || slug,
       movies: [],
     });
   }
 
-  // 2. Iterate through all movies and assign to their category/genre buckets
+  // 4. Iterate through all movies and assign to their category/genre buckets
   for (const movie of movies) {
     if (!movie.genres || movie.genres.length === 0) continue;
 
@@ -54,27 +90,36 @@ function groupMoviesByCategory(movies: MovieData[]): CategoryBucket[] {
       const slug = g.slug;
       if (!slug) continue;
 
+      const categoryName = customNamesMap.get(slug) || g.name || CATEGORIES[slug] || slug;
+
       if (!bucketsMap.has(slug)) {
         bucketsMap.set(slug, {
           slug,
-          name: g.name || CATEGORIES[slug] || slug,
+          name: categoryName,
           movies: [],
         });
+      } else {
+        // Ensure bucket has the custom name from database
+        bucketsMap.get(slug)!.name = categoryName;
       }
 
       const bucket = bucketsMap.get(slug)!;
-      // If the movie has a genre with a custom name from admin, use it
-      if (g.name && (!CATEGORIES[slug] || bucket.name === slug)) {
-        bucket.name = g.name;
-      }
       if (!bucket.movies.some((m) => m.id === movie.id)) {
         bucket.movies.push(movie);
       }
     }
   }
 
-  // 3. Filter out categories that have 0 movies
-  return Array.from(bucketsMap.values()).filter((b) => b.movies.length > 0);
+  // 5. Filter out categories that have 0 movies and sort strictly by configured order number!
+  const activeBuckets = Array.from(bucketsMap.values()).filter((b) => b.movies.length > 0);
+  activeBuckets.sort((a, b) => {
+    const orderA = orderMap.get(a.slug) ?? orderMap.get(a.slug.toLowerCase()) ?? 999;
+    const orderB = orderMap.get(b.slug) ?? orderMap.get(b.slug.toLowerCase()) ?? 999;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.name.localeCompare(b.name);
+  });
+
+  return activeBuckets;
 }
 
 // ─── PosterImage (shared fallback — matches existing sections) ────────────────
@@ -113,11 +158,13 @@ function PosterShelf({
   slug,
   name,
   movies,
+  userState,
   onSelectMovie,
 }: {
   slug: string;
   name?: string;
   movies: MovieData[];
+  userState?: string;
   onSelectMovie: (movie: MovieData) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -162,6 +209,8 @@ function PosterShelf({
           const hours = Math.floor(movie.duration / 60);
           const mins = movie.duration % 60;
           const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+          const isVipLocked = movie.roleAccess === "vip" && userState !== "paid_member" && userState !== "admin";
+          const isFreeLocked = movie.roleAccess === "free" && userState === "guest";
 
           return (
             <div
@@ -169,12 +218,59 @@ function PosterShelf({
               onClick={() => onSelectMovie(movie)}
               className="group flex-shrink-0 w-44 sm:w-48 md:w-56 cursor-pointer select-none"
             >
-              <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#161822] border border-white/10 shadow-lg group-hover:border-[#FF5500]/50 group-hover:scale-[1.03] transition-all duration-300">
+              <div
+                className={`relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#161822] border shadow-lg transition-all duration-300 ${
+                  isVipLocked
+                    ? "border-amber-400/40 group-hover:border-amber-400 group-hover:scale-[1.03]"
+                    : isFreeLocked
+                    ? "border-sky-400/40 group-hover:border-sky-400 group-hover:scale-[1.03]"
+                    : "border-white/10 group-hover:border-[#FF5500]/50 group-hover:scale-[1.03]"
+                }`}
+              >
                 <PosterImage src={movie.posterUrl} alt={movie.title} />
+
+                {/* Role Access Badges matching menu views */}
+                {movie.roleAccess === "vip" ? (
+                  <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-[#FF5500] text-black text-[10px] font-black uppercase tracking-wider flex items-center space-x-1 shadow-lg backdrop-blur-md">
+                    <Crown className="w-3 h-3 fill-black text-black" />
+                    <span>VIP</span>
+                  </div>
+                ) : movie.roleAccess === "free" ? (
+                  <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-full bg-sky-500/90 text-white text-[10px] font-black uppercase tracking-wider flex items-center space-x-1.5 shadow-lg backdrop-blur-md">
+                    <div className="w-3 h-3 flex-shrink-0">
+                      <OnePlusSignSvg />
+                    </div>
+                    <span>FREE</span>
+                  </div>
+                ) : movie.roleAccess === "admin" ? (
+                  <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-full bg-rose-500/90 text-white text-[10px] font-black uppercase tracking-wider flex items-center space-x-1 shadow-lg backdrop-blur-md">
+                    <ShieldAlert className="w-3 h-3" />
+                    <span>Admin</span>
+                  </div>
+                ) : null}
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                {/* Hover / Lock Action Button in Center */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                  <div className="w-11 h-11 rounded-full bg-[#FF5500] text-white flex items-center justify-center shadow-[0_0_20px_rgba(255,85,0,0.6)]">
-                    <Play className="w-5 h-5 fill-white ml-0.5" />
+                  <div
+                    className={`w-11 h-11 rounded-full text-white flex items-center justify-center ${
+                      isVipLocked
+                        ? "bg-gradient-to-r from-amber-500 to-[#FF5500] shadow-[0_0_20px_rgba(245,158,11,0.6)]"
+                        : isFreeLocked
+                        ? "bg-sky-500 shadow-[0_0_20px_rgba(14,165,233,0.6)]"
+                        : "bg-[#FF5500] shadow-[0_0_20px_rgba(255,85,0,0.6)]"
+                    }`}
+                  >
+                    {isVipLocked ? (
+                      <Crown className="w-5 h-5 fill-black text-black" />
+                    ) : isFreeLocked ? (
+                      <div className="w-5 h-5 flex-shrink-0">
+                        <OnePlusSignSvg />
+                      </div>
+                    ) : (
+                      <Play className="w-5 h-5 fill-white ml-0.5" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -209,11 +305,13 @@ function OriginalsShelf({
   slug,
   name,
   movies,
+  userState,
   onSelectMovie,
 }: {
   slug: string;
   name?: string;
   movies: MovieData[];
+  userState?: string;
   onSelectMovie: (movie: MovieData) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -261,59 +359,108 @@ function OriginalsShelf({
         ref={scrollRef}
         className="flex space-x-4 sm:space-x-5 overflow-x-auto no-scrollbar scroll-smooth pb-2"
       >
-        {movies.map((movie) => (
-          <div
-            key={movie.id}
-            onClick={() => onSelectMovie(movie)}
-            className="group flex-shrink-0 w-64 sm:w-72 md:w-80 cursor-pointer select-none"
-          >
-            {/* 16:9 Stylized Original Card */}
-            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-[#161822] border border-white/10 shadow-lg group-hover:border-[#FF5500]/50 group-hover:scale-[1.02] transition-all duration-300">
-              <Image
-                src={movie.bannerUrl || movie.posterUrl}
-                alt={movie.title}
-                fill
-                unoptimized
-                sizes="(max-width: 640px) 260px, (max-width: 1024px) 300px, 340px"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+        {movies.map((movie) => {
+          const isVipLocked = movie.roleAccess === "vip" && userState !== "paid_member" && userState !== "admin";
+          const isFreeLocked = movie.roleAccess === "free" && userState === "guest";
 
-              {/* Dark atmospheric overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30" />
+          return (
+            <div
+              key={movie.id}
+              onClick={() => onSelectMovie(movie)}
+              className="group flex-shrink-0 w-64 sm:w-72 md:w-80 cursor-pointer select-none"
+            >
+              {/* 16:9 Stylized Original Card */}
+              <div
+                className={`relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-[#161822] border shadow-lg transition-all duration-300 ${
+                  isVipLocked
+                    ? "border-amber-400/40 group-hover:border-amber-400 group-hover:scale-[1.02]"
+                    : isFreeLocked
+                    ? "border-sky-400/40 group-hover:border-sky-400 group-hover:scale-[1.02]"
+                    : "border-white/10 group-hover:border-[#FF5500]/50 group-hover:scale-[1.02]"
+                }`}
+              >
+                <Image
+                  src={movie.bannerUrl || movie.posterUrl}
+                  alt={movie.title}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 640px) 260px, (max-width: 1024px) 300px, 340px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
 
-              {/* 1+ ORIGINAL badge */}
-              <div className="absolute top-3 left-3 flex items-center space-x-1 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/15 text-[10px] font-black text-[#EB0028]">
-                <span>1+ ORIGINAL</span>
+                {/* Dark atmospheric overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30" />
+
+                {/* LensImpact Logo Badge */}
+                <div className="absolute top-3 left-3 z-10 flex items-center space-x-1.5 px-2 py-1">
+                  <div className="w-6 h-6">
+                    <OnePlusSignSvg />
+                  </div>
+                </div>
+
+                {/* Role Access Badges */}
+                {movie.roleAccess === "vip" ? (
+                  <div className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-[#FF5500] text-black text-[10px] font-black uppercase tracking-wider flex items-center space-x-1 shadow-lg backdrop-blur-md">
+                    <Crown className="w-3 h-3 fill-black text-black" />
+                    <span>VIP</span>
+                  </div>
+                ) : movie.roleAccess === "free" ? (
+                  <div className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full bg-sky-500/90 text-white text-[10px] font-black uppercase tracking-wider flex items-center space-x-1.5 shadow-lg backdrop-blur-md">
+                    <div className="w-3 h-3 flex-shrink-0">
+                      <OnePlusSignSvg />
+                    </div>
+                    <span>FREE</span>
+                  </div>
+                ) : movie.roleAccess === "admin" ? (
+                  <div className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full bg-rose-500/90 text-white text-[10px] font-black uppercase tracking-wider flex items-center space-x-1 shadow-lg backdrop-blur-md">
+                    <ShieldAlert className="w-3 h-3" />
+                    <span>Admin</span>
+                  </div>
+                ) : null}
+
+                {/* Hover Play / Lock Button */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/30 backdrop-blur-[2px]">
+                  <div
+                    className={`w-11 h-11 rounded-full text-white flex items-center justify-center ${
+                      isVipLocked
+                        ? "bg-gradient-to-r from-amber-500 to-[#FF5500] shadow-[0_0_20px_rgba(245,158,11,0.6)]"
+                        : isFreeLocked
+                        ? "bg-sky-500 shadow-[0_0_20px_rgba(14,165,233,0.6)]"
+                        : "bg-[#FF5500] shadow-[0_0_20px_rgba(255,85,0,0.6)]"
+                    }`}
+                  >
+                    {isVipLocked ? (
+                      <Crown className="w-5 h-5 fill-black text-black" />
+                    ) : isFreeLocked ? (
+                      <div className="w-5 h-5 flex-shrink-0">
+                        <OnePlusSignSvg />
+                      </div>
+                    ) : (
+                      <Play className="w-5 h-5 fill-white ml-0.5" />
+                    )}
+                  </div>
+                </div>
               </div>
 
-
-
-              {/* Hover Play Button */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/30 backdrop-blur-[2px]">
-                <div className="w-11 h-11 rounded-full bg-[#FF5500] text-white flex items-center justify-center shadow-[0_0_20px_rgba(255,85,0,0.6)]">
-                  <Play className="w-5 h-5 fill-white ml-0.5" />
+              {/* Title & Metadata */}
+              <div className="mt-2.5 px-0.5 space-y-0.5">
+                <h3 className="font-bold text-white text-sm sm:text-base tracking-tight truncate">
+                  {movie.title}
+                </h3>
+                <div className="flex items-center space-x-2 text-xs text-[#8E8E93] font-medium">
+                  <span>{movie.releaseYear}</span>
+                  <span className="text-white/30">•</span>
+                  <div className="flex items-center space-x-1 text-[#FFB800] font-bold">
+                    <Star className="w-3.5 h-3.5 fill-[#FFB800] text-[#FFB800]" />
+                    <span>{movie.rating.toFixed(1)}</span>
+                  </div>
+                  <span className="text-white/30">•</span>
+                  <span>{movie.duration}m</span>
                 </div>
               </div>
             </div>
-
-            {/* Title & Metadata */}
-            <div className="mt-2.5 px-0.5 space-y-0.5">
-              <h3 className="font-bold text-white text-sm sm:text-base tracking-tight truncate">
-                {movie.title}
-              </h3>
-              <div className="flex items-center space-x-2 text-xs text-[#8E8E93] font-medium">
-                <span>{movie.releaseYear}</span>
-                <span className="text-white/30">•</span>
-                <div className="flex items-center space-x-1 text-[#FFB800] font-bold">
-                  <Star className="w-3.5 h-3.5 fill-[#FFB800] text-[#FFB800]" />
-                  <span>{movie.rating.toFixed(1)}</span>
-                </div>
-                <span className="text-white/30">•</span>
-                <span>{movie.duration}m</span>
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -450,6 +597,7 @@ function LockedCategoryShelf({
 
 interface CategoryCatalogProps {
   movies: MovieData[];
+  genres?: Array<{ slug: string; name: string }>;
   categoryRules?: Record<string, CategoryAccessLevel>;
   catalogLimits?: CatalogLimits;
   onSelectMovie: (movie: MovieData) => void;
@@ -463,14 +611,13 @@ interface CategoryCatalogProps {
  */
 export default function CategoryCatalog({
   movies,
+  genres,
   categoryRules = DEFAULT_CATEGORY_RULES,
   catalogLimits = DEFAULT_CATALOG_LIMITS,
   onSelectMovie,
 }: CategoryCatalogProps) {
   const { userState } = useAuth();
-  const buckets = useMemo(() => groupMoviesByCategory(movies), [movies]);
-
-  if (buckets.length === 0) return null;
+  const buckets = useMemo(() => groupMoviesByCategory(movies, genres), [movies, genres]);
 
   const isGuest = userState === "guest";
   const isFullAccess = userState === "paid_member" || userState === "admin";
@@ -478,6 +625,7 @@ export default function CategoryCatalog({
   // Filter buckets: completely hide restricted categories for a clean, premium UI.
   // Users only see categories they have access to; Admins see all categories.
   const visibleBuckets = useMemo(() => {
+    if (buckets.length === 0) return [];
     let publicCount = 0;
     return buckets.filter((bucket) => {
       // 1. Admin and VIP Paid Members: Full Access to all categories
@@ -514,6 +662,7 @@ export default function CategoryCatalog({
             slug={bucket.slug}
             name={bucket.name}
             movies={bucket.movies}
+            userState={userState}
             onSelectMovie={onSelectMovie}
           />
         ) : (
@@ -522,6 +671,7 @@ export default function CategoryCatalog({
             slug={bucket.slug}
             name={bucket.name}
             movies={bucket.movies}
+            userState={userState}
             onSelectMovie={onSelectMovie}
           />
         );

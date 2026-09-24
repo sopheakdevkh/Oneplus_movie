@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
         id: true,
         email: true,
         name: true,
+        avatar: true,
         role: true,
         subscriptionStatus: true,
         subscriptionTier: true,
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest) {
           id: user.id,
           email: user.email,
           name: user.name,
+          avatar: user.avatar,
           role: user.role.toLowerCase(),
           subscription_status: user.subscriptionStatus,
           subscription_tier: user.subscriptionTier,
@@ -118,7 +120,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, currentPassword, newPassword } = body;
+    const { name, avatar, currentPassword, newPassword } = body;
 
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
@@ -131,7 +133,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updateData: { name?: string; passwordHash?: string } = {};
+    const updateData: { name?: string; avatar?: string | null; passwordHash?: string } = {};
 
     // 1. Update Name if provided
     if (typeof name === "string") {
@@ -145,7 +147,12 @@ export async function PATCH(request: NextRequest) {
       updateData.name = trimmed;
     }
 
-    // 2. Update Password if requested
+    // 2. Update Avatar if provided
+    if (avatar !== undefined) {
+      updateData.avatar = avatar === null ? null : String(avatar);
+    }
+
+    // 3. Update Password if requested
     if (newPassword) {
       if (typeof newPassword !== "string" || newPassword.length < 6) {
         return NextResponse.json(
@@ -179,7 +186,7 @@ export async function PATCH(request: NextRequest) {
       updateData.passwordHash = await hashPassword(newPassword);
     }
 
-    // 3. Save updates
+    // 4. Save updates
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: updateData,
@@ -187,6 +194,7 @@ export async function PATCH(request: NextRequest) {
         id: true,
         email: true,
         name: true,
+        avatar: true,
         role: true,
         subscriptionStatus: true,
         subscriptionTier: true,
@@ -202,6 +210,7 @@ export async function PATCH(request: NextRequest) {
         id: updated.id,
         email: updated.email,
         name: updated.name,
+        avatar: updated.avatar,
         role: updated.role.toLowerCase(),
         subscription_status: updated.subscriptionStatus,
         subscription_tier: updated.subscriptionTier,

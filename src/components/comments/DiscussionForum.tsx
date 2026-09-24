@@ -107,6 +107,7 @@ export default function DiscussionForum({
       authorName: user?.name || "Film Club Cinephile",
       authorEmail: user?.email,
       authorAvatar:
+        user?.avatar ||
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
       userTier: userState,
       rating: newRating,

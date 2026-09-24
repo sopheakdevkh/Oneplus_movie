@@ -10,6 +10,13 @@ import { getPosterCardUrl } from "@/lib/cloudinary";
 import { CATEGORIES } from "@/lib/categories";
 import { CastMember } from "@/lib/cast";
 import { getCastConfigAction, saveMovieCastAction } from "@/app/actions/cast";
+import {
+  NavMenuTarget,
+  MovieRoleAccess,
+  NAV_MENU_TARGETS,
+  ROLE_ACCESS_LEVELS,
+} from "@/lib/menu-roles";
+import { Tv, Shield, Crown } from "lucide-react";
 
 interface MovieModalProps {
   isOpen: boolean;
@@ -149,6 +156,22 @@ function MovieModalForm({
   const [publicSynopsis, setPublicSynopsis] = useState(movie?.publicSynopsis || "");
   const [premiumBreakdown, setPremiumBreakdown] = useState(movie?.premiumBreakdown || "");
 
+  // ── Menu Display & Role Access ──────────────────────────────
+  const [selectedMenus, setSelectedMenus] = useState<NavMenuTarget[]>(() => {
+    if (movie?.menus && movie.menus.length > 0) return movie.menus;
+    if (movie?.type === "Series") return ["Browse", "TV Shows"];
+    return ["Browse", "Movies"];
+  });
+  const [selectedRoleAccess, setSelectedRoleAccess] = useState<MovieRoleAccess>(
+    movie?.roleAccess || "public"
+  );
+
+  const toggleMenu = (menu: NavMenuTarget) => {
+    setSelectedMenus((prev) =>
+      prev.includes(menu) ? prev.filter((m) => m !== menu) : [...prev, menu]
+    );
+  };
+
   // ── Cast & Crew members ─────────────────────────────────────
   const [cast, setCast] = useState<CastMember[]>([]);
   const [actorName, setActorName] = useState("");
@@ -257,6 +280,8 @@ function MovieModalForm({
         isTopRated,
         rank: isTopRated && rank ? Number(rank) : null,
         genreNames: selectedGenres.length > 0 ? selectedGenres : ["Action"],
+        menus: selectedMenus,
+        roleAccess: selectedRoleAccess,
       };
 
       let result;
@@ -667,6 +692,60 @@ function MovieModalForm({
                 />
               </div>
             )}
+          </div>
+
+          {/* Row 9.5: Navigation Menus & Role Access Control */}
+          <div className="p-4 rounded-xl bg-[#1A1C23] border border-white/10 space-y-4">
+            <div>
+              <label className="text-xs font-bold text-white flex items-center space-x-1.5 mb-1">
+                <Tv className="w-3.5 h-3.5 text-[#00E5FF]" />
+                <span>Display On Navigation Menus</span>
+              </label>
+              <p className="text-[11px] text-[#8E8E93] mb-2.5">
+                Choose which of the top 3 navigation tabs this movie/video will display on.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {NAV_MENU_TARGETS.map((t) => {
+                  const isChecked = selectedMenus.includes(t.id);
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => toggleMenu(t.id)}
+                      className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        isChecked
+                          ? "bg-[#FF9F0A]/20 text-[#FF9F0A] border-[#FF9F0A]/50 shadow-sm"
+                          : "bg-white/5 text-[#8E8E93] border-white/5 hover:border-white/20"
+                      }`}
+                    >
+                      {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                      <span>{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-white flex items-center space-x-1.5 mb-1">
+                <Shield className="w-3.5 h-3.5 text-[#FF9F0A]" />
+                <span>Role Access Requirement</span>
+              </label>
+              <p className="text-[11px] text-[#8E8E93] mb-2">
+                Set minimum user tier required to view &amp; stream video on these menus.
+              </p>
+              <select
+                value={selectedRoleAccess}
+                onChange={(e) => setSelectedRoleAccess(e.target.value as MovieRoleAccess)}
+                className={selectCls}
+              >
+                {ROLE_ACCESS_LEVELS.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id} className="bg-[#121318]">
+                    {lvl.label} — {lvl.description}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Row 10: Cast & Crew Editor */}
