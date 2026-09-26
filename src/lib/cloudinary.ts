@@ -64,6 +64,15 @@ export function getOptimizedCloudinaryUrl(
     return imagePathOrUrl;
   }
 
+  // Preserve local uploads, data URIs, and blob URLs directly
+  if (
+    imagePathOrUrl.startsWith("/") ||
+    imagePathOrUrl.startsWith("data:") ||
+    imagePathOrUrl.startsWith("blob:")
+  ) {
+    return imagePathOrUrl;
+  }
+
   if (imagePathOrUrl.startsWith("http://") || imagePathOrUrl.startsWith("https://")) {
     return imagePathOrUrl;
   }

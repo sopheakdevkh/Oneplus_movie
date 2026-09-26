@@ -7,6 +7,7 @@ import { MovieData } from "@/lib/movies";
 import { createMovieAction, updateMovieAction } from "@/app/actions/movies";
 import { getGenresWithCounts } from "@/app/actions/genres";
 import { getPosterCardUrl } from "@/lib/cloudinary";
+import ImageUploadField from "@/components/admin/ImageUploadField";
 import { CATEGORIES } from "@/lib/categories";
 import { CastMember } from "@/lib/cast";
 import { getCastConfigAction, saveMovieCastAction } from "@/app/actions/cast";
@@ -490,49 +491,29 @@ function MovieModalForm({
             </div>
           </div>
 
-          {/* Row 5: Poster URL with Real-time Cloudinary Preview */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-            <div className="sm:col-span-2">
-              <label className={labelCls}>Poster URL (Cloudinary / CDN) *</label>
-              <input
-                type="url"
-                value={posterUrl}
-                onChange={(e) => setPosterUrl(e.target.value)}
-                placeholder="https://images.unsplash.com/... or Cloudinary URL"
-                required
-                className={inputCls}
-              />
-              <p className="text-[11px] text-[#8E8E93] mt-1">
-                Optimized on-the-fly via Cloudinary (<code className="text-white/70">f_auto,q_auto</code>).
-              </p>
-            </div>
-
-            {/* Thumbnail Live Preview */}
-            <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center">
-              {posterUrl ? (
-                <Image
-                  src={previewPoster}
-                  alt="Poster preview"
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-              ) : (
-                <span className="text-[11px] text-[#8E8E93]">No poster preview</span>
-              )}
-            </div>
-          </div>
-
-          {/* Row 5.5: Banner Backdrop URL */}
-          <div>
-            <label className={labelCls}>Banner / Backdrop URL (Optional)</label>
-            <input
-              type="url"
-              value={bannerUrl}
-              onChange={(e) => setBannerUrl(e.target.value)}
-              placeholder="https://images.unsplash.com/... or Cloudinary backdrop URL"
-              className={inputCls}
+          {/* Row 5: Poster Image with Upload & URL support */}
+          <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+            <ImageUploadField
+              label="Poster Image Artwork (Upload File or CDN URL)"
+              value={posterUrl}
+              onChange={setPosterUrl}
+              placeholder="Upload from computer, drag & drop, or paste image URL"
+              helperText="Supports local file upload (JPG, PNG, WebP) or CDN URLs. Cloudinary & local images optimized on-the-fly."
+              aspectRatio="poster"
+              required
             />
+
+            {/* Row 5.5: Banner Backdrop Image */}
+            <div className="pt-3 border-t border-white/5">
+              <ImageUploadField
+                label="Banner / Backdrop Landscape Artwork (Optional)"
+                value={bannerUrl}
+                onChange={setBannerUrl}
+                placeholder="Upload 16:9 banner file or paste backdrop URL"
+                helperText="High-resolution landscape image displayed in the hero carousel, modal detail views, and video player backdrop."
+                aspectRatio="banner"
+              />
+            </div>
           </div>
 
           {/* ═══════════════════════════════════════════════════════════

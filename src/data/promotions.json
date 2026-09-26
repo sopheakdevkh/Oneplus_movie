@@ -1,0 +1,44 @@
+[
+  {
+    "id": "promo-vip-pass",
+    "title": "Welcome to Kon Yeung",
+    "subtitle": "Movies, memories, and stories shared by our WMAD community.",
+    "badge": "NEWS & EVENTS",
+    "imageUrl": "/uploads/img_ChatGPT_Image_Sep_26__2026__07_1790426838849.png",
+    "linkUrl": "/login",
+    "ctaText": "Register Now ",
+    "themeColor": "#FF5500",
+    "isActive": true,
+    "order": 1,
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "updatedAt": "2026-09-26T13:04:43.302Z"
+  },
+  {
+    "id": "promo-indie-festival",
+    "title": "Your WMAD VIP Starts Here",
+    "subtitle": "Register today and unlock your free VIP membership as a WMAD friend.\nNo payment required. Just join the community.",
+    "badge": "LIMITED TIME OFFER",
+    "imageUrl": "/uploads/img_ChatGPT_Image_Sep_26__2026__07_1790427061841.png",
+    "linkUrl": "/login",
+    "ctaText": "Register & Get VIP",
+    "themeColor": "#00F0FF",
+    "isActive": true,
+    "order": 2,
+    "createdAt": "2026-09-10T00:00:00.000Z",
+    "updatedAt": "2026-09-26T13:07:07.382Z"
+  },
+  {
+    "id": "promo-gear-sponsor",
+    "title": "OnePlus 12 & Hasselblad Cinema Camera Edition",
+    "subtitle": "Shot entirely on mobile: experience cinematic 4K Dolby Vision capture with master color profiles.",
+    "badge": "FEATURED PARTNER",
+    "imageUrl": "/uploads/img_99b002aa-3661-47ab-ae71-44766e_1790427119587.png",
+    "linkUrl": "https://www.oneplus.com",
+    "ctaText": "Discover Gear",
+    "themeColor": "#EB0028",
+    "isActive": true,
+    "order": 3,
+    "createdAt": "2026-09-15T00:00:00.000Z",
+    "updatedAt": "2026-09-26T12:52:01.782Z"
+  }
+]

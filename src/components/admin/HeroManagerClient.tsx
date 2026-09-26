@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { MovieData } from "@/lib/movies";
 import HeroBanner from "@/components/HeroBanner";
+import ImageUploadField from "@/components/admin/ImageUploadField";
+import Link from "next/link";
 import {
   addToHeroBannerAction,
   removeFromHeroBannerAction,
@@ -207,43 +209,64 @@ export default function HeroManagerClient({
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2.5 mb-1">
-            <span className="p-2 rounded-xl bg-[#FF5500]/15 text-[#FF5500] border border-[#FF5500]/30">
-              <MonitorPlay className="w-5 h-5" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Hero Banner Management
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-[#8E8E93]">
-            Curate featured movie slides, trailer video previews (15s on mobile / 5s on desktop), backdrop artwork, and playback sequence.
-          </p>
+      {/* Page Header with Tab Switcher */}
+      <div className="space-y-4">
+        {/* Banner Section Mode Switcher Tabs */}
+        <div className="flex items-center space-x-2 p-1.5 rounded-2xl bg-[#121318] border border-white/10 w-fit">
+          <Link
+            href="/admin/hero"
+            className="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#FF5500] text-white shadow-lg shadow-[#FF5500]/30 transition-all"
+          >
+            <MonitorPlay className="w-3.5 h-3.5" />
+            <span>Movie Hero Spotlight</span>
+          </Link>
+          <Link
+            href="/admin/promotions"
+            className="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-[#8E8E93] hover:text-white hover:bg-white/5 transition-all"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#00F0FF]" />
+            <span>Promotions & Ads Slider</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] bg-[#00F0FF]/20 text-[#00F0FF] uppercase">New</span>
+          </Link>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setShowLivePreview((prev) => !prev)}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
-              showLivePreview
-                ? "bg-[#FF5500]/15 text-[#FF5500] border-[#FF5500]/40"
-                : "bg-white/5 hover:bg-white/10 text-white/80 border-white/10"
-            }`}
-          >
-            {showLivePreview ? (
-              <>
-                <EyeOff className="w-4 h-4" />
-                <span>Hide Live Preview</span>
-              </>
-            ) : (
-              <>
-                <Eye className="w-4 h-4" />
-                <span>Show Live Preview</span>
-              </>
-            )}
-          </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center space-x-2.5 mb-1">
+              <span className="p-2 rounded-xl bg-[#FF5500]/15 text-[#FF5500] border border-[#FF5500]/30">
+                <MonitorPlay className="w-5 h-5" />
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                Movie Hero Spotlight
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-[#8E8E93]">
+              Curate featured movie slides, trailer video previews (15s on mobile / 5s on desktop), backdrop artwork, and playback sequence.
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowLivePreview((prev) => !prev)}
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                showLivePreview
+                  ? "bg-[#FF5500]/15 text-[#FF5500] border-[#FF5500]/40"
+                  : "bg-white/5 hover:bg-white/10 text-white/80 border-white/10"
+              }`}
+            >
+              {showLivePreview ? (
+                <>
+                  <EyeOff className="w-4 h-4" />
+                  <span>Hide Live Preview</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4" />
+                  <span>Show Live Preview</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -520,30 +543,15 @@ export default function HeroManagerClient({
             </div>
 
             <div className="space-y-4">
-              {/* Backdrop Banner Image URL */}
-              <div>
-                <label className="block text-xs font-bold text-[#8E8E93] uppercase tracking-wider mb-1.5">
-                  Backdrop Banner Artwork URL (16:9 Recommended)
-                </label>
-                <input
-                  type="text"
-                  value={editBannerUrl}
-                  onChange={(e) => setEditBannerUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/... or Cloudinary URL"
-                  className="w-full bg-[#181A24] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#FF5500]"
-                />
-                {editBannerUrl && (
-                  <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black/40 mt-2 border border-white/10">
-                    <Image
-                      src={editBannerUrl}
-                      alt="Banner Preview"
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-              </div>
+              {/* Backdrop Banner Image with Upload & URL support */}
+              <ImageUploadField
+                label="Backdrop Banner Artwork (Upload 16:9 Banner or CDN URL)"
+                value={editBannerUrl}
+                onChange={setEditBannerUrl}
+                placeholder="Upload banner image from computer or paste image URL"
+                helperText="16:9 high resolution landscape image displayed in the hero spotlight."
+                aspectRatio="banner"
+              />
 
               {/* Video Trailer / Preview URL */}
               <div>

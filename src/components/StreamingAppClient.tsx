@@ -16,6 +16,8 @@ import { CategoryRulesConfig } from "@/lib/category-rules";
 import { CastDataConfig } from "@/lib/cast";
 import { isMovieAccessibleForRole } from "@/lib/menu-roles";
 import { OnePlusSignSvg } from "./OnePlusLogo";
+import { PromoBanner } from "@/lib/promotions";
+import PromotionBannerSlider from "./PromotionBannerSlider";
 
 interface StreamingAppClientProps {
   heroSlides?: MovieData[];
@@ -26,6 +28,7 @@ interface StreamingAppClientProps {
   featuredMovie?: MovieData | null;
   categoryRulesConfig?: CategoryRulesConfig;
   castConfig?: CastDataConfig;
+  promotions?: PromoBanner[];
 }
 
 export default function StreamingAppClient({
@@ -37,6 +40,7 @@ export default function StreamingAppClient({
   featuredMovie,
   categoryRulesConfig,
   castConfig,
+  promotions = [],
 }: StreamingAppClientProps) {
   const { user, isAuthenticated, userState, openAuthModal } = useAuth();
   const [activeTab, setActiveTab] = useState<NavTab>("Browse");
@@ -434,6 +438,11 @@ export default function StreamingAppClient({
               onPlayMovie={(movie) => setSelectedMovie(movie)}
               onMoreInfo={(movie) => setSelectedMovie(movie)}
             />
+
+            {/* 1.5 Slider Advertisement or Promotion News Banner */}
+            {promotions && promotions.length > 0 && (
+              <PromotionBannerSlider promotions={promotions} />
+            )}
 
             {/* 2. Continue Watching (only for titles user actually watched) */}
             <ContinueWatchingSection

@@ -6,6 +6,8 @@ import {
   Play,
   Plus,
   Star,
+  Image as ImageIcon,
+  Video as VideoIcon,
 } from "lucide-react";
 import { MovieData, FEATURED_SLIDES } from "../lib/movies";
 import { parseVideoSource } from "../lib/video";
@@ -28,6 +30,8 @@ export default function HeroBanner({
   const [progress, setProgress] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [preferImage, setPreferImage] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Detect mobile device for 15-second mobile preview
   useEffect(() => {
@@ -120,19 +124,25 @@ export default function HeroBanner({
       {/* Background Container: Poster Fallback + Short Video Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* 1. Instant Backdrop Image (Fallback & Seamless Transition) */}
-        <Image
-          key={`poster-${activeSlide.id}`}
-          src={activeSlide.bannerUrl || activeSlide.posterUrl}
-          alt={activeSlide.title}
-          fill
-          priority
-          unoptimized
-          sizes="100vw"
-          className="object-cover object-center brightness-[0.85] transition-transform duration-1000 scale-100"
-        />
+        {!imageError ? (
+          <Image
+            key={`poster-${activeSlide.id}`}
+            src={activeSlide.bannerUrl || activeSlide.posterUrl}
+            alt={activeSlide.title}
+            fill
+            priority
+            unoptimized
+            sizes="100vw"
+            referrerPolicy="no-referrer"
+            onError={() => setImageError(true)}
+            className="object-cover object-center brightness-[0.85] transition-transform duration-1000 scale-100"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#0F1017] via-[#1A1C28] to-[#0A0B0E]" />
+        )}
 
         {/* 2. Short Video of Movie (Plays 5-second preview) */}
-        {videoSource && !isPaused && (
+        {videoSource && !isPaused && !preferImage && (
           <div
             className={`absolute inset-0 w-full h-full transition-opacity duration-1000 pointer-events-none overflow-hidden ${
               videoReady ? "opacity-100" : "opacity-0"
@@ -278,6 +288,28 @@ export default function HeroBanner({
                 );
               })}
             </div>
+          )}
+
+          {/* Image Artwork vs Video Preview Toggle */}
+          {videoSource && (
+            <button
+              type="button"
+              onClick={() => setPreferImage((prev) => !prev)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 border border-white/15 text-white/90 hover:text-white text-[11px] font-bold backdrop-blur-md transition-all active:scale-95 shadow-md ml-auto"
+              title={preferImage ? "Switch to Video Trailer Preview" : "Switch to Full Backdrop Image Artwork"}
+            >
+              {preferImage ? (
+                <>
+                  <VideoIcon className="w-3.5 h-3.5 text-[#FF5500]" />
+                  <span>Play Trailer Preview</span>
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="w-3.5 h-3.5 text-[#00F0FF]" />
+                  <span>Display Image Artwork</span>
+                </>
+              )}
+            </button>
           )}
         </div>
       </div>
